@@ -21,9 +21,13 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), '
 const PORT = process.env.PORT || config.port || 3847;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'asb-generated-app-secret';
 
-// Builder HTML files served at /builder/<file>
+// Builder HTML and asset files served at /builder/<file>
 // In separated structure: frontend/ is sibling of backend/
-const BUILDER_FILES = new Set(['index.html', 'dashboard.html', 'project.html', 'admin.html']);
+const BUILDER_FILES = new Set([
+  'index.html', 'dashboard.html', 'project.html', 'admin.html',
+  'dynamic-theme.css', 'chaos-engine.js',
+  'index-enhanced.html', 'dashboard-enhanced.html', 'project-enhanced.html', 'admin-enhanced.html'
+]);
 const FRONTEND_DIR  = path.join(__dirname, '..', 'frontend');
 
 // ─── Incremental feature modules ─────────────────────────────────────────────
@@ -155,8 +159,9 @@ function serveStatic(req, res, filePath) {
 
 function serveBuilderStatic(res, filePath) {
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) { res.writeHead(404); return res.end('Not found'); }
+  const ext = path.extname(filePath).toLowerCase();
   const data = fs.readFileSync(filePath);
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': data.length, 'Cache-Control': 'no-store' });
+  res.writeHead(200, { 'Content-Type': MIME[ext] || 'text/html; charset=utf-8', 'Content-Length': data.length, 'Cache-Control': 'no-store' });
   res.end(data);
 }
 
