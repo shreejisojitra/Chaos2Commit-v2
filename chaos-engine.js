@@ -246,12 +246,89 @@ Key insights extracted:
     createdAt: new Date(Date.now() - 86400000).toISOString()
   };
 
+  function generateChatId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `chat_${window.crypto.randomUUID()}`;
+    }
+    return `chat_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function normalizeChatMessage(message) {
+    if (!message || typeof message !== 'object') return null;
+    const content = typeof message.content === 'string' ? message.content : String(message.content || '');
+    return {
+      id: message.id || generateChatId(),
+      role: message.role === 'assistant' ? 'assistant' : 'user',
+      content,
+      timestamp: message.timestamp || new Date().toISOString(),
+      analysis: message.analysis || null,
+      source: message.source || null
+    };
+  }
+
+  function deriveChatTitle(messageText) {
+    const clean = String(messageText || '').replace(/\s+/g, ' ').trim();
+    if (!clean) return 'New Chat';
+    const firstSentence = clean.split(/[\n.!?]+/)[0].trim();
+    const candidate = (firstSentence || clean).replace(/^\s+|\s+$/g, '');
+    const shortened = candidate.length > 36 ? candidate.slice(0, 33).trim() + '...' : candidate;
+    return shortened || 'New Chat';
+  }
+
+  function createChatFromMessages(messages, fallbackTitle = 'Main Conversation') {
+    const normalized = Array.isArray(messages) ? messages.map(normalizeChatMessage).filter(Boolean) : [];
+    const firstUser = normalized.find(item => item.role === 'user');
+    return {
+      id: generateChatId(),
+      title: fallbackTitle || (firstUser ? deriveChatTitle(firstUser.content) : 'New Chat'),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: normalized
+    };
+  }
+
+  function normalizeProjectChatState(project) {
+    if (!project || typeof project !== 'object') return project;
+
+    const legacyMessages = Array.isArray(project.consultantConversation) ? project.consultantConversation : [];
+    if (!Array.isArray(project.chats) || project.chats.length === 0) {
+      project.chats = [createChatFromMessages(legacyMessages, 'Main Conversation')];
+    } else {
+      project.chats.forEach(chat => {
+        if (!chat.id) chat.id = generateChatId();
+        if (!Array.isArray(chat.messages)) {
+          chat.messages = [];
+        } else {
+          chat.messages = chat.messages.map(normalizeChatMessage).filter(Boolean);
+        }
+        const firstUser = chat.messages.find(item => item.role === 'user');
+        if (!chat.title) {
+          chat.title = firstUser ? deriveChatTitle(firstUser.content) : 'New Chat';
+        }
+        if (!chat.createdAt) chat.createdAt = new Date().toISOString();
+        if (!chat.updatedAt) chat.updatedAt = chat.createdAt;
+      });
+    }
+
+    if (!project.activeChatId || !project.chats.some(chat => chat.id === project.activeChatId)) {
+      project.activeChatId = project.chats[0].id;
+    }
+
+    const activeChat = project.chats.find(chat => chat.id === project.activeChatId) || project.chats[0];
+    if (activeChat) {
+      project.consultantConversation = activeChat.messages;
+    }
+    return project;
+  }
+
   // ─── Central Project Store ───────────────────────────────────────────────────
   const PROJECTS_KEY = 'asb_projects';
+  const INDEPENDENT_CHATS_KEY = 'asb_independent_chats';
   const BILLING_KEY = 'asb_billing';
 
   const ChaosStore = {
     projects: [],
+    independentChats: [],
     currentProject: null,
     listeners: new Set(),
 
@@ -263,8 +340,31 @@ Key insights extracted:
         this.projects = [];
       }
 
+      this.projects = this.projects.map(project => normalizeProjectChatState(project));
+
+      try {
+        const storedInd = localStorage.getItem(INDEPENDENT_CHATS_KEY);
+        this.independentChats = storedInd ? JSON.parse(storedInd) : [];
+      } catch (_) {
+        this.independentChats = [];
+      }
+      if (!Array.isArray(this.independentChats)) this.independentChats = [];
+      this.independentChats.forEach(chat => {
+        if (!chat.id) chat.id = generateChatId();
+        chat.projectId = null;
+        if (!Array.isArray(chat.messages)) chat.messages = [];
+        else chat.messages = chat.messages.map(normalizeChatMessage).filter(Boolean);
+        const firstUser = chat.messages.find(item => item.role === 'user');
+        if (!chat.title) {
+          chat.title = firstUser ? deriveChatTitle(firstUser.content) : 'New Chat';
+        }
+        if (!chat.createdAt) chat.createdAt = new Date().toISOString();
+        if (!chat.updatedAt) chat.updatedAt = chat.createdAt;
+      });
+
       // Check if Pani Puri demo project exists, if not, add it seamlessly
       if (!this.projects.some(p => p.id === PANI_PURI_DEMO.id)) {
+        normalizeProjectChatState(PANI_PURI_DEMO);
         this.projects.unshift(PANI_PURI_DEMO);
         this.persist();
       }
@@ -287,6 +387,7 @@ Key insights extracted:
     persist() {
       try {
         localStorage.setItem(PROJECTS_KEY, JSON.stringify(this.projects));
+        localStorage.setItem(INDEPENDENT_CHATS_KEY, JSON.stringify(this.independentChats || []));
       } catch (e) {
         console.warn('Storage quota warning', e);
       }
@@ -297,11 +398,60 @@ Key insights extracted:
     },
 
     getProjectById(id) {
-      return this.projects.find(p => p.id === id) || null;
+      const project = this.projects.find(p => p.id === id) || null;
+      return project ? normalizeProjectChatState(project) : null;
+    },
+
+    getChatById(chatId) {
+      if (!chatId) return null;
+      if (Array.isArray(this.independentChats)) {
+        const ind = this.independentChats.find(c => c.id === chatId);
+        if (ind) return ind;
+      }
+      for (const p of this.projects || []) {
+        if (Array.isArray(p.chats)) {
+          const c = p.chats.find(c => c.id === chatId);
+          if (c) return c;
+        }
+      }
+      return null;
+    },
+
+    saveChat(chat) {
+      if (!chat || !chat.id) return;
+      if (!chat.projectId || chat.projectId === 'null') {
+        chat.projectId = null;
+        chat.updatedAt = new Date().toISOString();
+        this.independentChats = Array.isArray(this.independentChats) ? this.independentChats : [];
+        const idx = this.independentChats.findIndex(c => c.id === chat.id);
+        if (idx >= 0) {
+          this.independentChats[idx] = { ...this.independentChats[idx], ...chat };
+        } else {
+          this.independentChats.unshift(chat);
+        }
+        this.persist();
+        this.notify();
+        return;
+      }
+      const project = this.getProjectById(chat.projectId);
+      if (project && Array.isArray(project.chats)) {
+        const idx = project.chats.findIndex(c => c.id === chat.id);
+        if (idx >= 0) {
+          project.chats[idx] = { ...project.chats[idx], ...chat };
+          this.saveProject(project);
+        }
+      }
     },
 
     saveProject(project) {
-      if (!project || !project.id) return;
+      if (!project) return;
+      if (!project.id || project.isIndependent) {
+        if (Array.isArray(project.chats)) {
+          project.chats.forEach(chat => this.saveChat(chat));
+        }
+        return;
+      }
+      normalizeProjectChatState(project);
       project.updatedAt = new Date().toISOString();
       const idx = this.projects.findIndex(p => p.id === project.id);
       if (idx >= 0) {
@@ -352,6 +502,183 @@ Key insights extracted:
       this.saveProject(p);
     },
 
+    formatChatRelativeTime(timestamp) {
+      if (!timestamp) return 'Just now';
+      const diff = Date.now() - new Date(timestamp).getTime();
+      if (diff < 60000) return 'Just now';
+      if (diff < 3600000) return `${Math.max(1, Math.round(diff / 60000))} min ago`;
+      if (diff < 86400000) return `${Math.max(1, Math.round(diff / 3600000))} hr ago`;
+      if (diff < 172800000) return 'Yesterday';
+      if (diff < 604800000) return `${Math.floor(diff / 86400000)} days ago`;
+      return new Date(timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    },
+
+    getChatPreview(chat) {
+      if (!chat || !Array.isArray(chat.messages) || !chat.messages.length) return 'New conversation';
+      const reversed = [...chat.messages].reverse();
+      const latestUserMsg = reversed.find(m => m.role === 'user' && m.content && String(m.content).trim());
+      const latestMsg = latestUserMsg || reversed.find(m => m.content && String(m.content).trim());
+      if (!latestMsg || !latestMsg.content) return 'New conversation';
+      const clean = String(latestMsg.content).replace(/\s+/g, ' ').trim();
+      return clean.length > 95 ? clean.slice(0, 92).trim() + '…' : clean;
+    },
+
+    getAllChats() {
+      const all = [];
+
+      // 1. Independent chats
+      (this.independentChats || []).forEach(chat => {
+        all.push({
+          id: chat.id,
+          projectId: null,
+          projectName: 'No project',
+          projectBusinessName: null,
+          title: chat.title || 'New Chat',
+          createdAt: chat.createdAt,
+          updatedAt: chat.updatedAt || chat.createdAt,
+          messages: Array.isArray(chat.messages) ? chat.messages : [],
+          messageCount: (chat.messages || []).length,
+          preview: this.getChatPreview(chat)
+        });
+      });
+
+      // 2. Project chats
+      (this.projects || []).forEach(project => {
+        normalizeProjectChatState(project);
+        if (Array.isArray(project.chats)) {
+          project.chats.forEach(chat => {
+            all.push({
+              id: chat.id,
+              projectId: project.id,
+              projectName: project.name || 'Untitled Project',
+              projectBusinessName: project.businessName || '',
+              title: chat.title || 'New Chat',
+              createdAt: chat.createdAt,
+              updatedAt: chat.updatedAt || chat.createdAt,
+              messages: Array.isArray(chat.messages) ? chat.messages : [],
+              messageCount: (chat.messages || []).length,
+              preview: this.getChatPreview(chat)
+            });
+          });
+        }
+      });
+      return all.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+    },
+
+    createChat(projectId, title = 'New Chat') {
+      if (!projectId || projectId === 'null') {
+        const newChat = {
+          id: generateChatId(),
+          projectId: null,
+          title: title || 'New Chat',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          messages: []
+        };
+        this.independentChats = Array.isArray(this.independentChats) ? this.independentChats : [];
+        this.independentChats.unshift(newChat);
+        this.persist();
+        this.notify();
+        return newChat;
+      }
+      const project = this.getProjectById(projectId);
+      if (!project) return null;
+      normalizeProjectChatState(project);
+      const newChat = {
+        id: generateChatId(),
+        projectId: project.id,
+        title: title || 'New Chat',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        messages: []
+      };
+      project.chats = Array.isArray(project.chats) ? project.chats : [];
+      project.chats.unshift(newChat);
+      project.activeChatId = newChat.id;
+      project.consultantConversation = [];
+      this.saveProject(project);
+      return newChat;
+    },
+
+    deleteChat(projectId, chatId) {
+      if (!projectId || projectId === 'null' || (Array.isArray(this.independentChats) && this.independentChats.some(c => c.id === chatId))) {
+        const beforeLen = (this.independentChats || []).length;
+        this.independentChats = (this.independentChats || []).filter(c => c.id !== chatId);
+        this.persist();
+        this.notify();
+        return (this.independentChats || []).length < beforeLen;
+      }
+      const project = this.getProjectById(projectId);
+      if (!project) return false;
+      normalizeProjectChatState(project);
+      project.chats = (project.chats || []).filter(c => c.id !== chatId);
+      if (!project.chats.length) {
+        project.chats = [{
+          id: generateChatId(),
+          projectId: project.id,
+          title: 'New Chat',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          messages: []
+        }];
+      }
+      if (project.activeChatId === chatId || !project.chats.some(c => c.id === project.activeChatId)) {
+        project.activeChatId = project.chats[0].id;
+      }
+      const active = project.chats.find(c => c.id === project.activeChatId) || project.chats[0];
+      project.consultantConversation = active ? active.messages : [];
+      this.saveProject(project);
+      return true;
+    },
+
+    renameChat(projectId, chatId, newTitle) {
+      if (!projectId || projectId === 'null' || (Array.isArray(this.independentChats) && this.independentChats.some(c => c.id === chatId))) {
+        const chat = (this.independentChats || []).find(c => c.id === chatId);
+        if (!chat) return false;
+        chat.title = newTitle;
+        chat.updatedAt = new Date().toISOString();
+        this.persist();
+        this.notify();
+        return true;
+      }
+      const project = this.getProjectById(projectId);
+      if (!project) return false;
+      normalizeProjectChatState(project);
+      const chat = (project.chats || []).find(c => c.id === chatId);
+      if (!chat) return false;
+      chat.title = newTitle;
+      chat.updatedAt = new Date().toISOString();
+      this.saveProject(project);
+      return true;
+    },
+
+    associateChatWithProject(chatId, projectId) {
+      const chatIdx = (this.independentChats || []).findIndex(c => c.id === chatId);
+      if (chatIdx < 0) return null;
+      const chat = this.independentChats[chatIdx];
+      const project = this.getProjectById(projectId);
+      if (!project) return null;
+      chat.projectId = project.id;
+      project.chats = Array.isArray(project.chats) ? project.chats : [];
+      project.chats.unshift(chat);
+      this.independentChats.splice(chatIdx, 1);
+      this.saveProject(project);
+      this.persist();
+      this.notify();
+      return chat;
+    },
+
+    getActiveChat(project) {
+      if (!project) return null;
+      normalizeProjectChatState(project);
+      const chats = Array.isArray(project.chats) ? project.chats : [];
+      return chats.find(c => c.id === project.activeChatId) || chats[0] || null;
+    },
+
+    deriveChatTitle,
+    generateChatId,
+    normalizeProjectChatState,
+
     async syncWithServer() {
       try {
         const res = await fetch('/api/projects');
@@ -363,10 +690,15 @@ Key insights extracted:
               if (localIdx >= 0) {
                 // merge preserving latest
                 if (new Date(sp.updatedAt || 0) > new Date(this.projects[localIdx].updatedAt || 0)) {
-                  this.projects[localIdx] = { ...this.projects[localIdx], ...sp };
+                  const localChats = this.projects[localIdx].chats;
+                  const merged = { ...this.projects[localIdx], ...sp };
+                  if (Array.isArray(localChats) && localChats.length && (!Array.isArray(merged.chats) || !merged.chats.length)) {
+                    merged.chats = localChats;
+                  }
+                  this.projects[localIdx] = normalizeProjectChatState(merged);
                 }
               } else {
-                this.projects.push(sp);
+                this.projects.push(normalizeProjectChatState(sp));
               }
             });
             this.persist();
@@ -385,5 +717,8 @@ Key insights extracted:
   window.ChaosUI = ChaosUI;
   window.ChaosStore = ChaosStore;
   window.PANI_PURI_DEMO = PANI_PURI_DEMO;
+  window.generateChatId = generateChatId;
+  window.deriveChatTitle = deriveChatTitle;
+  window.normalizeProjectChatState = normalizeProjectChatState;
 
 })(window);

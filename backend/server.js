@@ -4,12 +4,11 @@
  * All pipeline API calls (consultant, blueprint, architecture, generate, modify, deploy) are handled here.
  */
 
-// Load .env file — override=true ensures .env always wins over stale system env vars
-try { require('dotenv').config({ override: true }); } catch (_) {}
-
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+// Load .env file — override=true ensures .env always wins over stale system env vars
+try { require('dotenv').config({ path: path.join(__dirname, '.env'), override: true }); } catch (_) {}
 const crypto = require('crypto');
 const { URL } = require('url');
 const db = require('./db');
@@ -255,24 +254,52 @@ const server = http.createServer(async (req, res) => {
       if (!checkAiRateLimit(ip)) return sendJson(res, 429, { error: 'Too many requests. Please wait a minute.' });
 
       const body = await readBody(req, 200_000);
-      const projectId = String(body.projectId || '').trim();
+      const rawProjectId = body.projectId;
+      const projectId = (typeof rawProjectId === 'string' && rawProjectId.trim() && rawProjectId !== 'null' && rawProjectId !== 'undefined')
+        ? rawProjectId.trim()
+        : null;
+      if (projectId && projectId.length > 120) return sendJson(res, 400, { error: 'Invalid projectId.' });
+
       const message = typeof body.message === 'string' ? body.message.trim() : '';
-      if (!projectId || projectId.length > 120) return sendJson(res, 400, { error: 'A valid projectId is required.' });
       if (!message || message.length > aiService.MAX_MESSAGE_LENGTH) {
         return sendJson(res, 400, { error: `Message must be 1–${aiService.MAX_MESSAGE_LENGTH} characters.` });
       }
+
+      // Security: if projectId is null (independent chat), never leak any project context
+      const projectContext = projectId && typeof body.projectContext === 'object' && body.projectContext !== null
+        ? body.projectContext
+        : {};
+
       try {
         const analysis = await aiService.analyze({
           message,
           conversation: body.conversation,
-          projectContext: body.projectContext,
+          projectContext,
         });
-        // Auto-save conversation to project store
-        if (body.projectId && body.fullConversation) {
-          const p = projectStore.get(body.projectId);
+        // Auto-save conversation to project store ONLY IF a real project exists
+        if (projectId && body.fullConversation) {
+          const p = projectStore.get(projectId);
           if (p) {
-            p.consultantConversation = body.fullConversation;
+            const assistantMsg = {
+              id: 'msg-' + Date.now(),
+              role: 'assistant',
+              content: analysis.businessUnderstanding || 'Analysis generated.',
+              analysis,
+              source: 'openai',
+              timestamp: new Date().toISOString()
+            };
+            const completeConv = Array.isArray(body.fullConversation)
+              ? [...body.fullConversation, assistantMsg]
+              : [assistantMsg];
+            p.consultantConversation = completeConv;
             p.consultant = analysis;
+            if (body.chatId && Array.isArray(p.chats)) {
+              const targetChat = p.chats.find(c => c.id === body.chatId);
+              if (targetChat) {
+                targetChat.messages = completeConv;
+                targetChat.updatedAt = new Date().toISOString();
+              }
+            }
             projectStore.upsert(p);
           }
         }

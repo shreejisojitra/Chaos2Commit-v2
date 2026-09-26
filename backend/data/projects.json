@@ -894,8 +894,8 @@
   {
     "id": "test",
     "blueprint": {
-      "productName": "HRConsult",
-      "productDescription": "A cloud-based HR consultancy platform that streamlines candidate management, client onboarding, and interview coordination for recruitment agencies.",
+      "productName": "HR Consult Pro",
+      "productDescription": "A web-based HR consultancy platform that streamlines candidate management, allowing recruiters to track applicants, schedule interviews, and collaborate with clients efficiently.",
       "targetUsers": [
         "Recruiter",
         "HR Consultant",
@@ -911,31 +911,25 @@
         {
           "id": "candidate",
           "name": "Candidate Management",
-          "description": "Create, update, and track candidate profiles and status",
+          "description": "CRUD operations for candidate profiles, resume uploads, and status tracking",
           "priority": "must-have"
         },
         {
           "id": "client",
           "name": "Client Management",
-          "description": "Manage client accounts, job requisitions, and billing information",
+          "description": "Manage client accounts, contact details, and associated job openings",
           "priority": "must-have"
         },
         {
           "id": "interview",
           "name": "Interview Scheduling",
-          "description": "Schedule, reschedule, and record interview details with candidates and interviewers",
+          "description": "Calendar integration, interview booking, and notifications",
           "priority": "nice-to-have"
         },
         {
-          "id": "document",
-          "name": "Document Management",
-          "description": "Upload, store, and share candidate and client documents securely",
-          "priority": "nice-to-have"
-        },
-        {
-          "id": "report",
+          "id": "reporting",
           "name": "Reporting & Analytics",
-          "description": "Generate dashboards and reports on candidate pipeline, client performance, and recruitment metrics",
+          "description": "Generate dashboards on candidate pipeline, interview outcomes, and client engagement",
           "priority": "nice-to-have"
         }
       ],
@@ -947,16 +941,14 @@
             "email",
             "name",
             "role",
-            "created_at",
-            "last_login"
+            "created_at"
           ]
         },
         {
           "name": "Candidate",
           "fields": [
             "id",
-            "first_name",
-            "last_name",
+            "name",
             "email",
             "phone",
             "resume_url",
@@ -968,10 +960,9 @@
           "name": "Client",
           "fields": [
             "id",
-            "company_name",
-            "contact_name",
+            "name",
+            "industry",
             "contact_email",
-            "contact_phone",
             "created_at"
           ]
         },
@@ -981,57 +972,48 @@
             "id",
             "candidate_id",
             "client_id",
-            "interviewer",
-            "scheduled_at",
+            "date",
+            "time",
+            "location",
             "status",
             "notes"
           ]
         },
         {
-          "name": "Document",
+          "name": "Application",
           "fields": [
             "id",
-            "entity_type",
-            "entity_id",
-            "file_name",
-            "file_url",
-            "uploaded_at"
-          ]
-        },
-        {
-          "name": "Role",
-          "fields": [
-            "id",
-            "name",
-            "permissions"
+            "candidate_id",
+            "client_id",
+            "position",
+            "status",
+            "created_at"
           ]
         }
       ],
       "userRoles": [
         "admin",
         "recruiter",
-        "consultant",
-        "client_manager"
+        "client",
+        "candidate"
       ],
       "keyFlows": [
-        "User registers and logs in",
-        "Recruiter adds a new candidate",
-        "Client manager creates a job requisition",
-        "Recruiter schedules an interview",
-        "Consultant generates a recruitment report"
+        "Candidate registers and uploads resume",
+        "Recruiter reviews and updates candidate status",
+        "Client views candidate shortlist and provides feedback",
+        "Recruiter schedules interview and sends notifications"
       ],
       "nonFunctionalRequirements": [
         "Responsive UI",
         "Secure password storage",
-        "Data encryption at rest",
-        "Audit logging",
-        "Scalable microservices architecture",
-        "High availability"
+        "GDPR compliance",
+        "High availability",
+        "Audit logging"
       ],
       "techStack": {
         "backend": "Node.js + Express",
         "frontend": "React",
-        "database": "MongoDB",
+        "database": "PostgreSQL",
         "deployment": "Render"
       }
     },
@@ -1040,11 +1022,11 @@
       "architecture": true
     },
     "status": "architecture",
-    "updatedAt": "2026-09-24T04:53:33.653Z",
+    "updatedAt": "2026-09-25T18:53:22.591Z",
     "createdAt": "2026-09-23T13:17:20.582Z",
     "architecture": {
-      "systemDiagram": "flowchart LR\n  Client[Browser] --> API[Node API]\n  API --> Auth[Auth Module]\n  Auth --> DB[(JSON Store)]\n  API --> Candidate[Candidate Module]\n  Candidate --> DB",
-      "erDiagram": "erDiagram\n  USER ||--o{ CANDIDATE : creates\n  USER {\n    string id PK\n    string email\n    string role\n  }\n  CANDIDATE {\n    string id PK\n    string name\n    string email\n    string resume\n    string status\n  }",
+      "systemDiagram": "flowchart LR\n  Client[Browser] --> API[Node API]\n  API --> Auth[Auth Module]\n  API --> Candidate[Candidate Module]\n  Auth --> DB[(JSON Store)]\n  Candidate --> DB",
+      "erDiagram": "erDiagram\n  USER ||--o{ CANDIDATE : creates\n  USER { string id\n    string email\n    string role }\n  CANDIDATE { string id\n    string name\n    string email\n    string resume\n    string status }",
       "apiEndpoints": [
         {
           "method": "POST",
@@ -1059,15 +1041,9 @@
           "auth": false
         },
         {
-          "method": "POST",
-          "path": "/api/auth/logout",
-          "description": "User logout",
-          "auth": true
-        },
-        {
           "method": "GET",
-          "path": "/api/candidates",
-          "description": "List candidates",
+          "path": "/api/auth/me",
+          "description": "Get current user",
           "auth": true
         },
         {
@@ -1078,8 +1054,14 @@
         },
         {
           "method": "GET",
+          "path": "/api/candidates",
+          "description": "List candidates",
+          "auth": true
+        },
+        {
+          "method": "GET",
           "path": "/api/candidates/:id",
-          "description": "Get candidate by ID",
+          "description": "Get candidate details",
           "auth": true
         },
         {
@@ -1098,14 +1080,13 @@
       "sitemap": [
         "Login",
         "Dashboard",
-        "Candidates",
-        "Candidate Detail"
+        "Candidates"
       ],
       "securityNotes": [
         "Passwords hashed with bcrypt",
         "Session-based auth with HttpOnly cookies",
-        "CSRF protection",
-        "Role-based access control"
+        "CSRF protection via double submit cookie",
+        "Input validation with Joi"
       ]
     }
   },
@@ -2265,337 +2246,290 @@
       "deployed": true
     },
     "createdAt": "2026-09-23T16:55:31.290Z",
-    "updatedAt": "2026-09-23T17:23:55.191Z",
+    "updatedAt": "2026-09-25T18:27:24.475Z",
     "docText": "BUSINESS TRANSFORMATION REQUIREMENT DOCUMENT\r\n\r\nProject Name:\r\nPani Puri Shop Online Ordering and Delivery Management System\r\n\r\nBusiness Type:\r\nFood and Beverage – Pani Puri Shop\r\n\r\nBusiness Idea:\r\nI want to open a Pani Puri shop and make the shop available for online ordering through food delivery platforms such as Swiggy. Customers should be able to discover the shop, view the menu, place an order, receive order notifications, and track their delivery.\r\n\r\nBUSINESS OBJECTIVE:\r\n\r\nThe main objective is to digitally transform the Pani Puri shop so that customers can order food online instead of visiting the shop physically.\r\n\r\nThe system should help manage online orders, notify the shop when a new order is received, notify customers about order status, and provide live delivery tracking.\r\n\r\nCURRENT BUSINESS PROCESS:\r\n\r\nCurrently, customers visit the shop physically and place their orders directly at the counter.\r\n\r\nThe shop does not currently have an online ordering system.\r\n\r\nThere is no automated order notification system.\r\n\r\nThere is no live delivery tracking system.\r\n\r\nThe business wants to start accepting online orders and provide delivery services.\r\n\r\nPROPOSED ONLINE PROCESS:\r\n\r\n1. Customer opens the food delivery application.\r\n\r\n2. Customer searches for the Pani Puri shop.\r\n\r\n3. Customer views the available menu items.\r\n\r\n4. Customer selects Pani Puri and other available food items.\r\n\r\n5. Customer selects quantity and adds items to the cart.\r\n\r\n6. Customer confirms the delivery address.\r\n\r\n7. Customer places the order.\r\n\r\n8. The shop receives an instant notification about the new order.\r\n\r\n9. The shop accepts or rejects the order.\r\n\r\n10. If the order is accepted, the shop starts preparing the order.\r\n\r\n11. The customer receives an order status notification.\r\n\r\n12. After preparation, the delivery partner collects the order from the shop.\r\n\r\n13. The delivery partner starts the delivery.\r\n\r\n14. The customer receives a notification that the order is out for delivery.\r\n\r\n15. The delivery partner's GPS location is shared while the delivery is active.\r\n\r\n16. The customer can open the tracking screen and view the delivery partner's live location on a map.\r\n\r\n17. The customer can see the estimated delivery status.\r\n\r\n18. The delivery partner reaches the customer's location.\r\n\r\n19. The order is delivered.\r\n\r\n20. The customer receives a delivery completion notification.\r\n\r\nCUSTOMER REQUIREMENTS:\r\n\r\nThe customer should be able to:\r\n\r\n* Search for the Pani Puri shop.\r\n* View the shop profile.\r\n* View the food menu.\r\n* View item names, prices and descriptions.\r\n* Select food items.\r\n* Select quantity.\r\n* Add items to cart.\r\n* View total order amount.\r\n* Enter or select delivery address.\r\n* Place an online order.\r\n* Receive order confirmation.\r\n* Receive order status notifications.\r\n* View order history.\r\n* Track an active delivery.\r\n* View the delivery partner's live GPS location.\r\n* View delivery status.\r\n* Receive notification when the order is delivered.\r\n* Provide feedback or rating after delivery.\r\n\r\nSHOP OWNER REQUIREMENTS:\r\n\r\nThe shop owner should be able to:\r\n\r\n* Create and manage the shop profile.\r\n* Add menu items.\r\n* Edit menu items.\r\n* Remove unavailable menu items.\r\n* Set item prices.\r\n* View incoming orders.\r\n* Receive instant notifications for new orders.\r\n* Accept or reject orders.\r\n* Update order status.\r\n* Mark orders as preparing.\r\n* Mark orders as ready.\r\n* View delivery status.\r\n* View active orders.\r\n* View completed orders.\r\n* View daily sales.\r\n* View order history.\r\n* Manage shop operating hours.\r\n\r\nDELIVERY PARTNER REQUIREMENTS:\r\n\r\nThe delivery partner should be able to:\r\n\r\n* Receive delivery assignment.\r\n* Accept a delivery.\r\n* View customer delivery address.\r\n* View shop pickup location.\r\n* Pick up the order from the shop.\r\n* Start delivery.\r\n* Share GPS location during active delivery.\r\n* Update delivery status.\r\n* Navigate to the customer location.\r\n* Mark the order as delivered.\r\n\r\nNOTIFICATION REQUIREMENTS:\r\n\r\nThe system should send notifications for important order events.\r\n\r\nCustomer notifications should include:\r\n\r\n* Order placed.\r\n* Order accepted.\r\n* Order rejected.\r\n* Order preparation started.\r\n* Order ready.\r\n* Order picked up.\r\n* Order out for delivery.\r\n* Delivery partner location available.\r\n* Order delivered.\r\n\r\nShop notifications should include:\r\n\r\n* New order received.\r\n* Order cancellation.\r\n* Delivery partner assigned.\r\n* Delivery partner arriving for pickup.\r\n\r\nDelivery partner notifications should include:\r\n\r\n* New delivery assignment.\r\n* Order ready for pickup.\r\n* Customer delivery information.\r\n* Delivery status updates.\r\n\r\nLIVE GPS TRACKING:\r\n\r\nThe system should provide live GPS tracking when an order is out for delivery.\r\n\r\nThe delivery partner's current location should be periodically updated.\r\n\r\nThe customer should be able to open a tracking page and see:\r\n\r\n* Delivery partner's current location.\r\n* Customer's delivery location.\r\n* Route between delivery partner and customer.\r\n* Delivery status.\r\n* Estimated delivery information.\r\n\r\nGPS tracking should only be active while the delivery is in progress.\r\n\r\nORDER STATUS:\r\n\r\nThe order should have the following statuses:\r\n\r\nPLACED\r\n↓\r\nACCEPTED\r\n↓\r\nPREPARING\r\n↓\r\nREADY FOR PICKUP\r\n↓\r\nPICKED UP\r\n↓\r\nOUT FOR DELIVERY\r\n↓\r\nDELIVERED\r\n\r\nIf the shop rejects an order, the status should become:\r\n\r\nREJECTED\r\n\r\nIf the customer cancels an order where cancellation is allowed, the status should become:\r\n\r\nCANCELLED\r\n\r\nPAYMENT REQUIREMENTS:\r\n\r\nThe system should support online payment for customer orders.\r\n\r\nPossible payment methods include:\r\n\r\n* UPI\r\n* Credit Card\r\n* Debit Card\r\n* Digital Wallet\r\n* Cash on Delivery if supported\r\n\r\nThe payment status should be associated with the order.\r\n\r\nADMIN REQUIREMENTS:\r\n\r\nAn administrator should be able to:\r\n\r\n* Manage shops.\r\n* Manage users.\r\n* Manage delivery partners.\r\n* View orders.\r\n* Monitor active deliveries.\r\n* View order statistics.\r\n* View payment information.\r\n* Manage platform settings.\r\n* Monitor system activity.\r\n\r\nDATABASE REQUIREMENTS:\r\n\r\nThe system may require entities such as:\r\n\r\nCustomer\r\nShop\r\nMenu Item\r\nOrder\r\nOrder Item\r\nDelivery Partner\r\nDelivery\r\nAddress\r\nPayment\r\nNotification\r\nGPS Location\r\nReview\r\n\r\nImportant relationships should be maintained between these entities.\r\n\r\nFor example:\r\n\r\nCustomer → Order\r\n\r\nOrder → Order Items\r\n\r\nOrder → Payment\r\n\r\nOrder → Delivery\r\n\r\nDelivery → Delivery Partner\r\n\r\nDelivery → GPS Location\r\n\r\nShop → Menu Items\r\n\r\nShop → Orders\r\n\r\nTECHNOLOGY REQUIREMENTS:\r\n\r\nThe proposed system should support:\r\n\r\n* Web application.\r\n* Mobile-friendly customer interface.\r\n* Shop management interface.\r\n* Delivery partner interface.\r\n* Backend APIs.\r\n* Database.\r\n* Notification service.\r\n* GPS/location service.\r\n* Map integration.\r\n* Payment integration.\r\n* Food delivery platform integration.\r\n\r\nPOTENTIAL AI OPPORTUNITIES:\r\n\r\nAI may be used for:\r\n\r\n* Personalized food recommendations.\r\n* Customer order recommendations.\r\n* Demand prediction.\r\n* Sales forecasting.\r\n* Popular item prediction.\r\n* Delivery time prediction.\r\n* Customer feedback analysis.\r\n* Automated customer support.\r\n* Business insights.\r\n* Inventory or ingredient demand prediction.\r\n\r\nBUSINESS GOALS:\r\n\r\nThe system should help the Pani Puri shop:\r\n\r\n1. Increase online orders.\r\n2. Reach more customers.\r\n3. Reduce manual order handling.\r\n4. Provide faster order notifications.\r\n5. Improve delivery visibility.\r\n6. Improve customer experience.\r\n7. Track business performance.\r\n8. Support future business expansion.\r\n\r\nEXPECTED OUTCOME:\r\n\r\nThe final solution should provide an integrated digital ordering and delivery management system for the Pani Puri shop.\r\n\r\nThe system should connect customers, the shop owner, delivery partners and administrators.\r\n\r\nThe solution should support online ordering, order management, notifications, delivery tracking, GPS location sharing, payment processing, business analytics and future AI-based improvements.\r\n\r\nThe proposed system should be scalable so that additional shops, menu items, delivery partners and customers can be added in the future.\r\n",
     "docName": "Pani_Puri_Shop_Business_Requirements.txt",
     "requirements": "when user gives order it should give notification and live gps location should be on when user want to track delivery so that they can see",
     "process": "",
     "consultantConversation": [
       {
+        "id": "chat_001b2449-1cf4-45e4-aa7b-5d286e0f12bc",
         "role": "user",
-        "content": "I want to open Paani puri shop and allow swiggy in that"
+        "content": "An online bakery platform where customers can browse cakes, cupcakes, pastries, and other desserts. Customers can select cake size, flavour, quantity, upload reference images for customized designs, and add special instructions before placing an order. Bakery staff can manage products, customer orders, inventory, preparation status, delivery schedules, and customer information. The dashboard can show today's orders, pending preparations, sales, popular products, and delivery status.",
+        "timestamp": "2026-09-25T18:24:36.553Z",
+        "analysis": null,
+        "source": null
       },
       {
+        "id": "chat_58b3953b-77b8-46f1-8bae-5f1c6f8fee17",
         "role": "assistant",
-        "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+        "content": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
+        "timestamp": "2026-09-25T18:24:38.976Z",
         "analysis": {
-          "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
-          "targetUsers": [
-            "Admin",
-            "Staff"
-          ],
-          "explicitRequirements": [
-            {
-              "text": "User authentication (login/register)",
-              "evidence": "Standard requirement",
-              "confidence": 0.95
-            },
-            {
-              "text": "Core retail record management",
-              "evidence": "Inferred from business type",
-              "confidence": 0.75
-            }
-          ],
-          "missingRequirements": [
-            "User roles not defined",
-            "Reporting requirements not mentioned",
-            "Notification requirements unclear"
-          ],
-          "questions": [
-            "Who are the primary users of this system?",
-            "Do you need multi-user/multi-tenant support?",
-            "Are there compliance or data privacy requirements?",
-            "Do you need mobile app support?"
-          ],
-          "recommendations": [
-            {
-              "text": "Add role-based access control (admin vs staff)",
-              "explanation": "Security baseline for any multi-user system",
-              "confidence": 0.9
-            },
-            {
-              "text": "Include audit trail / activity log",
-              "explanation": "Useful for compliance and debugging",
-              "confidence": 0.7
-            }
-          ],
-          "assumptions": [
-            "Rule-based fallback — AI not available. This analysis is approximate.",
-            "OpenAI API key not configured on server."
-          ]
-        },
-        "source": "fallback"
-      },
-      {
-        "role": "user",
-        "content": "I want to open Paani puri shop and allow swiggy in that"
-      },
-      {
-        "role": "assistant",
-        "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
-        "analysis": {
-          "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
-          "targetUsers": [
-            "Admin",
-            "Staff"
-          ],
-          "explicitRequirements": [
-            {
-              "text": "User authentication (login/register)",
-              "evidence": "Standard requirement",
-              "confidence": 0.95
-            },
-            {
-              "text": "Core retail record management",
-              "evidence": "Inferred from business type",
-              "confidence": 0.75
-            }
-          ],
-          "missingRequirements": [
-            "User roles not defined",
-            "Reporting requirements not mentioned",
-            "Notification requirements unclear"
-          ],
-          "questions": [
-            "Who are the primary users of this system?",
-            "Do you need multi-user/multi-tenant support?",
-            "Are there compliance or data privacy requirements?",
-            "Do you need mobile app support?"
-          ],
-          "recommendations": [
-            {
-              "text": "Add role-based access control (admin vs staff)",
-              "explanation": "Security baseline for any multi-user system",
-              "confidence": 0.9
-            },
-            {
-              "text": "Include audit trail / activity log",
-              "explanation": "Useful for compliance and debugging",
-              "confidence": 0.7
-            }
-          ],
-          "assumptions": [
-            "Rule-based fallback — AI not available. This analysis is approximate.",
-            "OpenAI API key not configured on server."
-          ]
-        },
-        "source": "fallback"
-      },
-      {
-        "role": "user",
-        "content": "I want to open Paani puri shop and allow swiggy in that"
-      },
-      {
-        "role": "assistant",
-        "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
-        "analysis": {
-          "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
-          "targetUsers": [
-            "Admin",
-            "Staff"
-          ],
-          "explicitRequirements": [
-            {
-              "text": "User authentication (login/register)",
-              "evidence": "Standard requirement",
-              "confidence": 0.95
-            },
-            {
-              "text": "Core retail record management",
-              "evidence": "Inferred from business type",
-              "confidence": 0.75
-            }
-          ],
-          "missingRequirements": [
-            "User roles not defined",
-            "Reporting requirements not mentioned",
-            "Notification requirements unclear"
-          ],
-          "questions": [
-            "Who are the primary users of this system?",
-            "Do you need multi-user/multi-tenant support?",
-            "Are there compliance or data privacy requirements?",
-            "Do you need mobile app support?"
-          ],
-          "recommendations": [
-            {
-              "text": "Add role-based access control (admin vs staff)",
-              "explanation": "Security baseline for any multi-user system",
-              "confidence": 0.9
-            },
-            {
-              "text": "Include audit trail / activity log",
-              "explanation": "Useful for compliance and debugging",
-              "confidence": 0.7
-            }
-          ],
-          "assumptions": [
-            "Rule-based fallback — AI not available. This analysis is approximate.",
-            "OpenAI API key not configured on server."
-          ]
-        },
-        "source": "fallback"
-      },
-      {
-        "role": "user",
-        "content": "I want to open a Pani Puri shop and make the shop available for online ordering through food delivery platforms such as Swiggy. Customers should be able to discover the shop, view the menu, place an order, receive order notifications, and track their delivery."
-      },
-      {
-        "role": "assistant",
-        "content": "The business is a Pani Puri shop that will accept online orders through food delivery platforms such as Swiggy, providing customers with menu browsing, ordering, notifications, and live delivery tracking.",
-        "analysis": {
-          "businessUnderstanding": "The business is a Pani Puri shop that will accept online orders through food delivery platforms such as Swiggy, providing customers with menu browsing, ordering, notifications, and live delivery tracking.",
+          "businessUnderstanding": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
           "targetUsers": [
             "Customers",
-            "Shop Owner",
-            "Delivery Partner"
+            "Bakery Staff"
           ],
           "explicitRequirements": [
             {
-              "text": "Customers must be able to search for the shop, view the menu, add items to cart, place an order, and receive order status notifications.",
-              "evidence": "\"The customer should be able to: Search for the Pani Puri shop. View the shop profile. View the food menu. ... Place an online order. Receive order status notifications.\"",
+              "text": "Customers can browse cakes, cupcakes, pastries, and other desserts",
+              "evidence": "\"customers can browse cakes, cupcakes, pastries, and other desserts\"",
               "confidence": 0.95
             },
             {
-              "text": "The shop owner must receive instant notifications for new orders and be able to accept or reject orders, update order status, and manage the menu.",
-              "evidence": "\"The shop owner should be able to: Receive instant notifications for new orders. Accept or reject orders. Update order status. Add menu items. ...\"",
+              "text": "Customers can select cake size, flavour, and quantity",
+              "evidence": "\"select cake size, flavour, quantity\"",
               "confidence": 0.95
             },
             {
-              "text": "Delivery partners must receive delivery assignments, share GPS location during active delivery, and update delivery status.",
-              "evidence": "\"The delivery partner should be able to: Receive delivery assignment. Share GPS location during active delivery. Update delivery status.\"",
+              "text": "Customers can upload reference images for customized designs",
+              "evidence": "\"upload reference images for customized designs\"",
               "confidence": 0.95
             },
             {
-              "text": "The system must provide live GPS tracking only while the delivery is in progress.",
-              "evidence": "\"GPS tracking should only be active while the delivery is in progress.\"",
-              "confidence": 0.9
+              "text": "Customers can add special instructions before placing an order",
+              "evidence": "\"add special instructions before placing an order\"",
+              "confidence": 0.95
             },
             {
-              "text": "Order status flow must include PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED, with REJECTED and CANCELLED as alternatives.",
-              "evidence": "\"The order should have the following statuses: PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED. If the shop rejects an order, the status should become REJECTED.\"",
-              "confidence": 0.9
+              "text": "Customers can place an order",
+              "evidence": "\"before placing an order\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage products",
+              "evidence": "\"Bakery staff can manage products\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage customer orders",
+              "evidence": "\"manage customer orders\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage inventory",
+              "evidence": "\"manage inventory\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage preparation status",
+              "evidence": "\"manage preparation status\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage delivery schedules",
+              "evidence": "\"manage delivery schedules\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Bakery staff can manage customer information",
+              "evidence": "\"manage customer information\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Dashboard shows today's orders",
+              "evidence": "\"dashboard can show today's orders\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Dashboard shows pending preparations",
+              "evidence": "\"pending preparations\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Dashboard shows sales",
+              "evidence": "\"sales\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Dashboard shows popular products",
+              "evidence": "\"popular products\"",
+              "confidence": 0.95
+            },
+            {
+              "text": "Dashboard shows delivery status",
+              "evidence": "\"delivery status\"",
+              "confidence": 0.95
             }
           ],
           "missingRequirements": [
-            "Payment gateway integration details (e.g., UPI, card, wallet).",
-            "Admin panel for managing shops, users, and delivery partners.",
-            "Analytics and reporting for sales and performance.",
-            "Security and data privacy compliance.",
-            "Integration specifics with Swiggy API (authentication, endpoints)."
+            "Payment processing and integration",
+            "Order status workflow and notifications",
+            "Delivery partner management and GPS tracking",
+            "Admin role for system-wide configuration",
+            "Inventory alerts and reorder triggers",
+            "Analytics and reporting beyond dashboard",
+            "Security and data privacy measures"
           ],
           "questions": [
-            "Which payment methods will the shop support and how will they be integrated?",
-            "Will the system use Swiggy’s API for order placement or will it act as a separate platform?",
-            "What level of GPS accuracy and update frequency is required for delivery tracking?",
-            "How will cancellations and refunds be handled?",
-            "What are the expected volume and concurrency requirements for the system?"
+            "What payment methods should the platform support?",
+            "Will deliveries be handled by in-house staff or third‑party partners?",
+            "Do you need real‑time order status notifications for customers and staff?",
+            "Is there a preferred technology stack or existing infrastructure to integrate with?"
           ],
           "recommendations": [
             {
-              "text": "Integrate with Swiggy’s official API to handle order placement, status updates, and delivery partner assignment.",
-              "explanation": "Using the official API reduces development effort, ensures compliance with Swiggy’s policies, and provides reliable data exchange.",
+              "text": "Integrate a secure payment gateway to handle online payments and refunds",
+              "explanation": "Ensures smooth checkout experience and reduces manual reconciliation",
               "confidence": 0.85
             },
             {
-              "text": "Implement push notifications via Firebase Cloud Messaging or similar to deliver real‑time order updates to customers and shop owners.",
-              "explanation": "Push notifications provide instant communication, improving user experience and reducing missed orders.",
+              "text": "Implement real‑time notifications (push/email) for order status changes",
+              "explanation": "Keeps customers and staff informed, improving service quality",
               "confidence": 0.8
             },
             {
-              "text": "Use a map service (e.g., Google Maps or Mapbox) for live GPS tracking and route visualization.",
-              "explanation": "A proven map SDK offers accurate routing, distance estimation, and a polished UI for tracking.",
+              "text": "Add inventory management with low‑stock alerts and automatic reorder suggestions",
+              "explanation": "Prevents stockouts and streamlines procurement",
               "confidence": 0.8
             },
             {
-              "text": "Design the backend with a microservices architecture separating order, notification, and tracking services.",
-              "explanation": "This allows independent scaling, easier maintenance, and clearer separation of concerns.",
+              "text": "Provide a mobile‑friendly interface or app for customers and delivery partners",
+              "explanation": "Enhances usability and supports on‑the‑go ordering and tracking",
               "confidence": 0.75
             }
           ],
           "assumptions": [
-            "Swiggy provides an API that allows external shops to place orders and receive status updates.",
-            "Customers will use Swiggy’s app for ordering, not a separate custom app.",
-            "The shop has a reliable internet connection for real‑time notifications and GPS updates."
+            "The platform will be web‑based with optional mobile app support",
+            "Customers will place orders online and pay digitally",
+            "Bakery staff have access to a secure dashboard for order and inventory management",
+            "Deliveries will be handled by either in‑house staff or third‑party partners with GPS tracking"
           ]
         },
         "source": "openai"
       }
     ],
     "consultant": {
-      "businessUnderstanding": "The business is a Pani Puri shop that will accept online orders through food delivery platforms such as Swiggy, providing customers with menu browsing, ordering, notifications, and live delivery tracking.",
+      "businessUnderstanding": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
       "targetUsers": [
         "Customers",
-        "Shop Owner",
-        "Delivery Partner"
+        "Bakery Staff"
       ],
       "explicitRequirements": [
         {
-          "text": "Customers must be able to search for the shop, view the menu, add items to cart, place an order, and receive order status notifications.",
-          "evidence": "\"The customer should be able to: Search for the Pani Puri shop. View the shop profile. View the food menu. ... Place an online order. Receive order status notifications.\"",
+          "text": "Customers can browse cakes, cupcakes, pastries, and other desserts",
+          "evidence": "\"customers can browse cakes, cupcakes, pastries, and other desserts\"",
           "confidence": 0.95
         },
         {
-          "text": "The shop owner must receive instant notifications for new orders and be able to accept or reject orders, update order status, and manage the menu.",
-          "evidence": "\"The shop owner should be able to: Receive instant notifications for new orders. Accept or reject orders. Update order status. Add menu items. ...\"",
+          "text": "Customers can select cake size, flavour, and quantity",
+          "evidence": "\"select cake size, flavour, quantity\"",
           "confidence": 0.95
         },
         {
-          "text": "Delivery partners must receive delivery assignments, share GPS location during active delivery, and update delivery status.",
-          "evidence": "\"The delivery partner should be able to: Receive delivery assignment. Share GPS location during active delivery. Update delivery status.\"",
+          "text": "Customers can upload reference images for customized designs",
+          "evidence": "\"upload reference images for customized designs\"",
           "confidence": 0.95
         },
         {
-          "text": "The system must provide live GPS tracking only while the delivery is in progress.",
-          "evidence": "\"GPS tracking should only be active while the delivery is in progress.\"",
-          "confidence": 0.9
+          "text": "Customers can add special instructions before placing an order",
+          "evidence": "\"add special instructions before placing an order\"",
+          "confidence": 0.95
         },
         {
-          "text": "Order status flow must include PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED, with REJECTED and CANCELLED as alternatives.",
-          "evidence": "\"The order should have the following statuses: PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED. If the shop rejects an order, the status should become REJECTED.\"",
-          "confidence": 0.9
+          "text": "Customers can place an order",
+          "evidence": "\"before placing an order\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage products",
+          "evidence": "\"Bakery staff can manage products\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage customer orders",
+          "evidence": "\"manage customer orders\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage inventory",
+          "evidence": "\"manage inventory\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage preparation status",
+          "evidence": "\"manage preparation status\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage delivery schedules",
+          "evidence": "\"manage delivery schedules\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Bakery staff can manage customer information",
+          "evidence": "\"manage customer information\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard shows today's orders",
+          "evidence": "\"dashboard can show today's orders\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard shows pending preparations",
+          "evidence": "\"pending preparations\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard shows sales",
+          "evidence": "\"sales\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard shows popular products",
+          "evidence": "\"popular products\"",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard shows delivery status",
+          "evidence": "\"delivery status\"",
+          "confidence": 0.95
         }
       ],
       "missingRequirements": [
-        "Payment gateway integration details (e.g., UPI, card, wallet).",
-        "Admin panel for managing shops, users, and delivery partners.",
-        "Analytics and reporting for sales and performance.",
-        "Security and data privacy compliance.",
-        "Integration specifics with Swiggy API (authentication, endpoints)."
+        "Payment processing and integration",
+        "Order status workflow and notifications",
+        "Delivery partner management and GPS tracking",
+        "Admin role for system-wide configuration",
+        "Inventory alerts and reorder triggers",
+        "Analytics and reporting beyond dashboard",
+        "Security and data privacy measures"
       ],
       "questions": [
-        "Which payment methods will the shop support and how will they be integrated?",
-        "Will the system use Swiggy’s API for order placement or will it act as a separate platform?",
-        "What level of GPS accuracy and update frequency is required for delivery tracking?",
-        "How will cancellations and refunds be handled?",
-        "What are the expected volume and concurrency requirements for the system?"
+        "What payment methods should the platform support?",
+        "Will deliveries be handled by in-house staff or third‑party partners?",
+        "Do you need real‑time order status notifications for customers and staff?",
+        "Is there a preferred technology stack or existing infrastructure to integrate with?"
       ],
       "recommendations": [
         {
-          "text": "Integrate with Swiggy’s official API to handle order placement, status updates, and delivery partner assignment.",
-          "explanation": "Using the official API reduces development effort, ensures compliance with Swiggy’s policies, and provides reliable data exchange.",
+          "text": "Integrate a secure payment gateway to handle online payments and refunds",
+          "explanation": "Ensures smooth checkout experience and reduces manual reconciliation",
           "confidence": 0.85
         },
         {
-          "text": "Implement push notifications via Firebase Cloud Messaging or similar to deliver real‑time order updates to customers and shop owners.",
-          "explanation": "Push notifications provide instant communication, improving user experience and reducing missed orders.",
+          "text": "Implement real‑time notifications (push/email) for order status changes",
+          "explanation": "Keeps customers and staff informed, improving service quality",
           "confidence": 0.8
         },
         {
-          "text": "Use a map service (e.g., Google Maps or Mapbox) for live GPS tracking and route visualization.",
-          "explanation": "A proven map SDK offers accurate routing, distance estimation, and a polished UI for tracking.",
+          "text": "Add inventory management with low‑stock alerts and automatic reorder suggestions",
+          "explanation": "Prevents stockouts and streamlines procurement",
           "confidence": 0.8
         },
         {
-          "text": "Design the backend with a microservices architecture separating order, notification, and tracking services.",
-          "explanation": "This allows independent scaling, easier maintenance, and clearer separation of concerns.",
+          "text": "Provide a mobile‑friendly interface or app for customers and delivery partners",
+          "explanation": "Enhances usability and supports on‑the‑go ordering and tracking",
           "confidence": 0.75
         }
       ],
       "assumptions": [
-        "Swiggy provides an API that allows external shops to place orders and receive status updates.",
-        "Customers will use Swiggy’s app for ordering, not a separate custom app.",
-        "The shop has a reliable internet connection for real‑time notifications and GPS updates."
+        "The platform will be web‑based with optional mobile app support",
+        "Customers will place orders online and pay digitally",
+        "Bakery staff have access to a secure dashboard for order and inventory management",
+        "Deliveries will be handled by either in‑house staff or third‑party partners with GPS tracking"
       ]
     },
     "requirements_list": [
@@ -2694,48 +2628,60 @@
       }
     ],
     "blueprint": {
-      "productName": "PaniPuriExpress",
-      "productDescription": "An integrated platform for a Pani Puri shop to accept orders via Swiggy, manage menu, handle real-time notifications, and provide live GPS tracking for deliveries.",
+      "productName": "Paani Puri Express",
+      "productDescription": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
       "targetUsers": [
-        "Customer",
-        "Shop Owner",
-        "Delivery Partner"
+        "Customers",
+        "Shop Owners",
+        "Delivery Partners"
       ],
       "coreModules": [
         {
           "id": "auth",
           "name": "Authentication",
-          "description": "User login and registration via Swiggy OAuth and internal accounts",
+          "description": "User login, registration, and role-based access control",
           "priority": "must-have"
         },
         {
-          "id": "menu",
-          "name": "Menu Management",
-          "description": "Browse, search, and manage menu items",
+          "id": "productCatalog",
+          "name": "Product Catalog",
+          "description": "Browse, search, and customize menu items",
           "priority": "must-have"
         },
         {
-          "id": "order",
-          "name": "Order Processing",
-          "description": "Place orders, track status, and integrate with Swiggy API",
+          "id": "cart",
+          "name": "Shopping Cart",
+          "description": "Add, edit, and review items before checkout",
           "priority": "must-have"
         },
         {
-          "id": "notification",
-          "name": "Push Notifications",
-          "description": "Real-time updates via FCM",
+          "id": "orderService",
+          "name": "Order Management",
+          "description": "Create, update, and track order status through the defined lifecycle",
           "priority": "must-have"
         },
         {
-          "id": "tracking",
-          "name": "Live Tracking",
-          "description": "GPS tracking during delivery with map integration",
+          "id": "notificationService",
+          "name": "Notification Service",
+          "description": "Push notifications via Firebase Cloud Messaging for real‑time updates",
           "priority": "must-have"
         },
         {
-          "id": "integration",
-          "name": "Swiggy Integration",
-          "description": "Handle order placement, status sync, and delivery assignment",
+          "id": "deliveryTracking",
+          "name": "Delivery Tracking",
+          "description": "Live GPS tracking during active delivery using Google Maps or Mapbox",
+          "priority": "must-have"
+        },
+        {
+          "id": "inventoryManagement",
+          "name": "Inventory Management",
+          "description": "Track stock levels and alert owners when items are low",
+          "priority": "nice-to-have"
+        },
+        {
+          "id": "dashboard",
+          "name": "Owner Dashboard",
+          "description": "Manage menu, view orders, and update statuses",
           "priority": "must-have"
         }
       ],
@@ -2751,14 +2697,14 @@
           ]
         },
         {
-          "name": "MenuItem",
+          "name": "Product",
           "fields": [
             "id",
             "name",
             "description",
             "price",
             "image_url",
-            "available"
+            "stock"
           ]
         },
         {
@@ -2766,35 +2712,50 @@
           "fields": [
             "id",
             "user_id",
-            "items",
-            "total_amount",
             "status",
-            "created_at",
-            "updated_at",
-            "delivery_partner_id"
+            "total_amount",
+            "placed_at"
           ]
         },
         {
-          "name": "DeliveryPartner",
+          "name": "OrderItem",
           "fields": [
             "id",
-            "name",
-            "phone",
-            "vehicle_type",
-            "current_location",
-            "status"
+            "order_id",
+            "product_id",
+            "quantity",
+            "price"
+          ]
+        },
+        {
+          "name": "DeliveryAssignment",
+          "fields": [
+            "id",
+            "order_id",
+            "delivery_partner_id",
+            "status",
+            "assigned_at"
           ]
         },
         {
           "name": "Notification",
           "fields": [
             "id",
-            "user_id",
-            "order_id",
+            "recipient_id",
             "type",
             "message",
-            "sent_at",
+            "created_at",
             "read"
+          ]
+        },
+        {
+          "name": "GPSLocation",
+          "fields": [
+            "id",
+            "delivery_assignment_id",
+            "latitude",
+            "longitude",
+            "timestamp"
           ]
         }
       ],
@@ -2804,176 +2765,86 @@
         "deliveryPartner"
       ],
       "keyFlows": [
-        "Customer searches shop, views menu, adds items to cart, and places an order",
-        "Shop owner receives instant notification for new order and accepts or rejects it",
-        "Order status updates flow through PLACED → ACCEPTED → PREPARING → READY FOR PICKUP → PICKED UP → OUT FOR DELIVERY → DELIVERED",
-        "Delivery partner receives assignment, shares GPS location during active delivery, and updates delivery status",
-        "Customer receives real-time notifications and can view live GPS tracking during delivery"
+        "Customer registers, browses menu, adds items to cart, places order, receives notifications, and tracks delivery",
+        "Owner receives new order notifications, accepts or rejects orders, updates order status, and manages the menu",
+        "Delivery partner receives delivery assignments, shares GPS location during active delivery, and updates delivery status"
       ],
       "nonFunctionalRequirements": [
         "Responsive UI across devices",
-        "Secure authentication and password storage",
-        "Real-time push notifications with minimal latency",
-        "Live GPS tracking only enabled during delivery phase",
+        "Secure password storage with bcrypt",
+        "Real-time push notifications via FCM",
+        "Live GPS tracking only while delivery is in progress",
         "Scalable microservices architecture",
-        "Compliance with Swiggy API terms and rate limits",
         "High availability and fault tolerance",
-        "Data encryption at rest and in transit"
+        "GDPR compliant data handling",
+        "API rate limiting and monitoring"
       ],
       "techStack": {
-        "backend": "Node.js with Express and microservices",
-        "frontend": "React.js with Redux",
+        "backend": "Node.js",
+        "frontend": "React",
         "database": "PostgreSQL",
-        "deployment": "Render with Docker and Kubernetes"
+        "deployment": "Render"
       }
     },
     "architecture": {
-      "systemDiagram": "flowchart LR\\n  Browser[Browser] --> API[API Gateway]\\n  API --> AuthService[Auth Service]\\n  API --> MenuService[Menu Service]\\n  API --> OrderService[Order Service]\\n  API --> NotificationService[Notification Service]\\n  API --> TrackingService[Tracking Service]\\n  API --> SwiggyService[Swiggy Integration]\\n  AuthService --> Postgres[(PostgreSQL)]\\n  MenuService --> Postgres\\n  OrderService --> Postgres\\n  NotificationService --> Postgres\\n  TrackingService --> Postgres\\n  SwiggyService --> Postgres",
-      "erDiagram": "erDiagram\\n  USER ||--o{ ORDER : places\\n  ORDER }o--|| MENU_ITEM : contains\\n  ORDER }o--|| DELIVERY_PARTNER : assigned_to\\n  USER }o--|| NOTIFICATION : receives\\n  USER {\\n    string id PK\\n    string email\\n    string password\\n    string role\\n  }\\n  MENU_ITEM {\\n    string id PK\\n    string name\\n    string description\\n    decimal price\\n    string category\\n  }\\n  ORDER {\\n    string id PK\\n    string user_id FK\\n    string status\\n    decimal total_amount\\n    datetime created_at\\n  }\\n  DELIVERY_PARTNER {\\n    string id PK\\n    string name\\n    string vehicle\\n    decimal rating\\n  }\\n  NOTIFICATION {\\n    string id PK\\n    string user_id FK\\n    string type\\n    string message\\n    datetime read_at\\n  }",
+      "systemDiagram": "graph TD\n  Customer[📱 Customer Mobile Web] -->|HTTP / WebSocket| Gateway[API Gateway / Node.js]\n  Shop[🖥️ Shop Kitchen Dashboard] -->|WebSocket Listen| Gateway\n  Driver[🛵 Delivery Partner App] -->|GPS Streaming| Gateway\n  Gateway --> Auth[🔐 Auth & Security Service]\n  Gateway --> OrderService[📦 Order Management Engine]\n  Gateway --> TrackingService[📍 Real-time GPS Tracker]\n  Gateway --> PaymentService[💳 Razorpay Gateway]\n  TrackingService --> Redis[(⚡ Redis Live Coordinates)]\n  OrderService --> DB[(🗄️ PostgreSQL Database)]\n  OrderService --> Notif[🔔 WhatsApp / SMS Service]",
+      "erDiagram": "erDiagram\n  USERS ||--o{ ORDERS : places\n  SHOPS ||--o{ ORDERS : fulfills\n  ORDERS ||--|{ ORDER_ITEMS : contains\n  ORDERS ||--|| DELIVERIES : dispatched_via\n  DELIVERIES ||--o{ GPS_LOGS : records\n  ORDERS ||--|| PAYMENTS : settled_by\n  MENU_ITEMS ||--o{ ORDER_ITEMS : specified_in",
       "apiEndpoints": [
         {
           "method": "POST",
-          "path": "/api/auth/login",
-          "description": "User login",
-          "auth": false
-        },
-        {
-          "method": "POST",
-          "path": "/api/auth/register",
-          "description": "User registration",
-          "auth": false
-        },
-        {
-          "method": "GET",
-          "path": "/api/auth/me",
-          "description": "Get current user",
-          "auth": true
-        },
-        {
-          "method": "POST",
-          "path": "/api/auth/logout",
-          "description": "Logout user",
-          "auth": true
-        },
-        {
-          "method": "GET",
-          "path": "/api/menu",
-          "description": "List menu items",
-          "auth": false
-        },
-        {
-          "method": "POST",
-          "path": "/api/menu",
-          "description": "Create menu item",
-          "auth": true,
-          "role": "owner"
-        },
-        {
-          "method": "PUT",
-          "path": "/api/menu/:id",
-          "description": "Update menu item",
-          "auth": true,
-          "role": "owner"
-        },
-        {
-          "method": "DELETE",
-          "path": "/api/menu/:id",
-          "description": "Delete menu item",
-          "auth": true,
-          "role": "owner"
-        },
-        {
-          "method": "POST",
           "path": "/api/orders",
-          "description": "Place order",
-          "auth": true
-        },
-        {
-          "method": "GET",
-          "path": "/api/orders",
-          "description": "List user orders",
+          "description": "Create and initialize a new Pani Puri order",
           "auth": true
         },
         {
           "method": "GET",
           "path": "/api/orders/:id",
-          "description": "Get order details",
+          "description": "Retrieve order details, items and current status",
           "auth": true
         },
         {
           "method": "PUT",
           "path": "/api/orders/:id/status",
-          "description": "Update order status",
-          "auth": true,
-          "role": "owner"
+          "description": "Update status (preparing, ready, dispatched, delivered)",
+          "auth": true
         },
         {
           "method": "POST",
-          "path": "/api/notifications",
-          "description": "Send notification",
-          "auth": true,
-          "role": "owner"
-        },
-        {
-          "method": "GET",
-          "path": "/api/notifications",
-          "description": "List notifications",
-          "auth": true
-        },
-        {
-          "method": "PUT",
-          "path": "/api/notifications/:id/read",
-          "description": "Mark notification as read",
+          "path": "/api/delivery/assign",
+          "description": "Assign nearest delivery partner to order",
           "auth": true
         },
         {
           "method": "GET",
-          "path": "/api/orders/:id/tracking",
-          "description": "Live tracking of order",
-          "auth": true
-        },
-        {
-          "method": "GET",
-          "path": "/api/swiggy/orders",
-          "description": "Sync orders from Swiggy",
-          "auth": true,
-          "role": "owner"
+          "path": "/api/delivery/:orderId/location",
+          "description": "Fetch live GPS latitude/longitude and ETA",
+          "auth": false
         },
         {
           "method": "POST",
-          "path": "/api/swiggy/orders",
-          "description": "Create order in Swiggy",
-          "auth": true,
-          "role": "owner"
+          "path": "/api/payments/verify",
+          "description": "Verify payment gateway signature and webhook",
+          "auth": true
         }
       ],
       "sitemap": [
-        "Login",
-        "Register",
-        "Menu",
-        "Cart",
-        "Checkout",
-        "Order History",
-        "Order Tracking",
-        "Notifications",
-        "Admin Dashboard",
-        "Delivery Partner Dashboard"
+        "/ (Customer Order Front & Menu)",
+        "/cart (Custom Flavor Picker & Checkout)",
+        "/tracking/:id (Live GPS Delivery Map)",
+        "/shop/dashboard (Kitchen Order Display System)",
+        "/driver/portal (Delivery Partner Order & Navigation)",
+        "/admin/analytics (Sales & Business Reports)"
       ],
       "securityNotes": [
-        "Passwords hashed with bcrypt",
-        "JWT tokens for stateless auth",
-        "HTTPS enforced",
-        "CSRF protection on state-changing endpoints",
-        "Rate limiting per IP",
-        "Input validation and sanitization",
-        "Secure HttpOnly cookies",
-        "CORS configured for trusted origins",
-        "Environment variables for secrets"
+        "JWT tokens with HttpOnly cookies for customer and staff sessions",
+        "Rate limiting on order endpoints to prevent fake traffic surges",
+        "HMAC SHA-256 signature verification for payment webhooks",
+        "Obfuscation of customer phone numbers between driver and buyer"
       ]
     },
     "generationSpec": {
-      "appName": "PaniPuriExpress",
-      "businessName": "PaniPuri Express Pvt Ltd",
+      "appName": "Paani Puri Express",
+      "businessName": "Paani Puri Express",
       "entityName": "Order",
       "entityNamePlural": "Orders",
       "entityFields": [
@@ -2983,8 +2854,8 @@
           "required": true
         },
         {
-          "name": "items",
-          "type": "json",
+          "name": "status",
+          "type": "text",
           "required": true
         },
         {
@@ -2993,24 +2864,20 @@
           "required": true
         },
         {
-          "name": "status",
-          "type": "text",
+          "name": "placed_at",
+          "type": "datetime",
           "required": true
-        },
-        {
-          "name": "delivery_partner_id",
-          "type": "number",
-          "required": false
         }
       ],
       "modules": [
         "auth",
-        "menu",
-        "order",
-        "notification",
-        "tracking",
-        "integration",
-        "zomatoIntegration"
+        "productCatalog",
+        "cart",
+        "orderService",
+        "notificationService",
+        "deliveryTracking",
+        "inventoryManagement",
+        "dashboard"
       ],
       "userRoles": [
         "customer",
@@ -3020,10 +2887,21 @@
       "pages": [
         "index.html",
         "login.html",
-        "register.html"
+        "register.html",
+        "products.html",
+        "cart.html",
+        "order.html",
+        "dashboard.html",
+        "delivery.html"
       ]
     },
     "versions": [
+      {
+        "version": "1.1.10",
+        "changes": "Initial app generated from blueprint",
+        "at": "2026-09-25T18:25:14.381Z",
+        "status": "ok"
+      },
       {
         "version": "1.1.7",
         "changes": "Add Zomato integration to the app",
@@ -3059,7 +2937,448 @@
       "platform": "local",
       "deployedAt": "2026-09-23T17:23:55.176Z",
       "note": "Running locally. For production deployment, export the generated-app directory to Render, Railway, or Vercel + serverless adapter."
-    }
+    },
+    "chats": [
+      {
+        "id": "chat_2b47ad56-395a-4199-be75-d71b1893563b",
+        "projectId": "p_muecghjui7mb05",
+        "title": "HR management system",
+        "createdAt": "2026-09-25T18:24:11.664Z",
+        "updatedAt": "2026-09-25T18:24:38.976Z",
+        "messages": [
+          {
+            "id": "chat_001b2449-1cf4-45e4-aa7b-5d286e0f12bc",
+            "role": "user",
+            "content": "An online bakery platform where customers can browse cakes, cupcakes, pastries, and other desserts. Customers can select cake size, flavour, quantity, upload reference images for customized designs, and add special instructions before placing an order. Bakery staff can manage products, customer orders, inventory, preparation status, delivery schedules, and customer information. The dashboard can show today's orders, pending preparations, sales, popular products, and delivery status.",
+            "timestamp": "2026-09-25T18:24:36.553Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_58b3953b-77b8-46f1-8bae-5f1c6f8fee17",
+            "role": "assistant",
+            "content": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
+            "timestamp": "2026-09-25T18:24:38.976Z",
+            "analysis": {
+              "businessUnderstanding": "An online bakery platform that lets customers browse and customize desserts, place orders, and track deliveries, while bakery staff manage products, inventory, order preparation, and delivery schedules through a dashboard.",
+              "targetUsers": [
+                "Customers",
+                "Bakery Staff"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "Customers can browse cakes, cupcakes, pastries, and other desserts",
+                  "evidence": "\"customers can browse cakes, cupcakes, pastries, and other desserts\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Customers can select cake size, flavour, and quantity",
+                  "evidence": "\"select cake size, flavour, quantity\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Customers can upload reference images for customized designs",
+                  "evidence": "\"upload reference images for customized designs\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Customers can add special instructions before placing an order",
+                  "evidence": "\"add special instructions before placing an order\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Customers can place an order",
+                  "evidence": "\"before placing an order\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage products",
+                  "evidence": "\"Bakery staff can manage products\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage customer orders",
+                  "evidence": "\"manage customer orders\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage inventory",
+                  "evidence": "\"manage inventory\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage preparation status",
+                  "evidence": "\"manage preparation status\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage delivery schedules",
+                  "evidence": "\"manage delivery schedules\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Bakery staff can manage customer information",
+                  "evidence": "\"manage customer information\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard shows today's orders",
+                  "evidence": "\"dashboard can show today's orders\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard shows pending preparations",
+                  "evidence": "\"pending preparations\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard shows sales",
+                  "evidence": "\"sales\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard shows popular products",
+                  "evidence": "\"popular products\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard shows delivery status",
+                  "evidence": "\"delivery status\"",
+                  "confidence": 0.95
+                }
+              ],
+              "missingRequirements": [
+                "Payment processing and integration",
+                "Order status workflow and notifications",
+                "Delivery partner management and GPS tracking",
+                "Admin role for system-wide configuration",
+                "Inventory alerts and reorder triggers",
+                "Analytics and reporting beyond dashboard",
+                "Security and data privacy measures"
+              ],
+              "questions": [
+                "What payment methods should the platform support?",
+                "Will deliveries be handled by in-house staff or third‑party partners?",
+                "Do you need real‑time order status notifications for customers and staff?",
+                "Is there a preferred technology stack or existing infrastructure to integrate with?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Integrate a secure payment gateway to handle online payments and refunds",
+                  "explanation": "Ensures smooth checkout experience and reduces manual reconciliation",
+                  "confidence": 0.85
+                },
+                {
+                  "text": "Implement real‑time notifications (push/email) for order status changes",
+                  "explanation": "Keeps customers and staff informed, improving service quality",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Add inventory management with low‑stock alerts and automatic reorder suggestions",
+                  "explanation": "Prevents stockouts and streamlines procurement",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Provide a mobile‑friendly interface or app for customers and delivery partners",
+                  "explanation": "Enhances usability and supports on‑the‑go ordering and tracking",
+                  "confidence": 0.75
+                }
+              ],
+              "assumptions": [
+                "The platform will be web‑based with optional mobile app support",
+                "Customers will place orders online and pay digitally",
+                "Bakery staff have access to a secure dashboard for order and inventory management",
+                "Deliveries will be handled by either in‑house staff or third‑party partners with GPS tracking"
+              ]
+            },
+            "source": "openai"
+          }
+        ]
+      },
+      {
+        "id": "chat_a193cead-6544-40f1-8eed-6cce66c48075",
+        "title": "Main Conversation",
+        "createdAt": "2026-09-25T17:57:20.568Z",
+        "updatedAt": "2026-09-25T17:57:20.568Z",
+        "messages": [
+          {
+            "id": "chat_136ffe7c-20bc-45d6-a9c8-f6ed15b2c1dd",
+            "role": "user",
+            "content": "I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_81463810-bc83-417f-b0de-1dcccbc6dbdf",
+            "role": "assistant",
+            "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": {
+              "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+              "targetUsers": [
+                "Admin",
+                "Staff"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "User authentication (login/register)",
+                  "evidence": "Standard requirement",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Core retail record management",
+                  "evidence": "Inferred from business type",
+                  "confidence": 0.75
+                }
+              ],
+              "missingRequirements": [
+                "User roles not defined",
+                "Reporting requirements not mentioned",
+                "Notification requirements unclear"
+              ],
+              "questions": [
+                "Who are the primary users of this system?",
+                "Do you need multi-user/multi-tenant support?",
+                "Are there compliance or data privacy requirements?",
+                "Do you need mobile app support?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Add role-based access control (admin vs staff)",
+                  "explanation": "Security baseline for any multi-user system",
+                  "confidence": 0.9
+                },
+                {
+                  "text": "Include audit trail / activity log",
+                  "explanation": "Useful for compliance and debugging",
+                  "confidence": 0.7
+                }
+              ],
+              "assumptions": [
+                "Rule-based fallback — AI not available. This analysis is approximate.",
+                "OpenAI API key not configured on server."
+              ]
+            },
+            "source": "fallback"
+          },
+          {
+            "id": "chat_b28fe5eb-4267-4ff4-98c6-e621470e4334",
+            "role": "user",
+            "content": "I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_00f00171-3eea-4ddf-9d74-be68b4263c75",
+            "role": "assistant",
+            "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": {
+              "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+              "targetUsers": [
+                "Admin",
+                "Staff"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "User authentication (login/register)",
+                  "evidence": "Standard requirement",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Core retail record management",
+                  "evidence": "Inferred from business type",
+                  "confidence": 0.75
+                }
+              ],
+              "missingRequirements": [
+                "User roles not defined",
+                "Reporting requirements not mentioned",
+                "Notification requirements unclear"
+              ],
+              "questions": [
+                "Who are the primary users of this system?",
+                "Do you need multi-user/multi-tenant support?",
+                "Are there compliance or data privacy requirements?",
+                "Do you need mobile app support?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Add role-based access control (admin vs staff)",
+                  "explanation": "Security baseline for any multi-user system",
+                  "confidence": 0.9
+                },
+                {
+                  "text": "Include audit trail / activity log",
+                  "explanation": "Useful for compliance and debugging",
+                  "confidence": 0.7
+                }
+              ],
+              "assumptions": [
+                "Rule-based fallback — AI not available. This analysis is approximate.",
+                "OpenAI API key not configured on server."
+              ]
+            },
+            "source": "fallback"
+          },
+          {
+            "id": "chat_5ac2f6de-8825-4fe5-8a49-0a9235056d43",
+            "role": "user",
+            "content": "I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_2e5530b7-ba4d-4b46-ac27-a7c65fa1b280",
+            "role": "assistant",
+            "content": "AI unavailable: Groq API key not set. Add GROQ_API_KEY to backend/.env and restart. Free key at https://console.groq.com\n\nLocal analysis: This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": {
+              "businessUnderstanding": "This appears to be a retail platform. I want to open Paani puri shop and allow swiggy in that",
+              "targetUsers": [
+                "Admin",
+                "Staff"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "User authentication (login/register)",
+                  "evidence": "Standard requirement",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Core retail record management",
+                  "evidence": "Inferred from business type",
+                  "confidence": 0.75
+                }
+              ],
+              "missingRequirements": [
+                "User roles not defined",
+                "Reporting requirements not mentioned",
+                "Notification requirements unclear"
+              ],
+              "questions": [
+                "Who are the primary users of this system?",
+                "Do you need multi-user/multi-tenant support?",
+                "Are there compliance or data privacy requirements?",
+                "Do you need mobile app support?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Add role-based access control (admin vs staff)",
+                  "explanation": "Security baseline for any multi-user system",
+                  "confidence": 0.9
+                },
+                {
+                  "text": "Include audit trail / activity log",
+                  "explanation": "Useful for compliance and debugging",
+                  "confidence": 0.7
+                }
+              ],
+              "assumptions": [
+                "Rule-based fallback — AI not available. This analysis is approximate.",
+                "OpenAI API key not configured on server."
+              ]
+            },
+            "source": "fallback"
+          },
+          {
+            "id": "chat_502e3a91-28a4-4549-8081-35c9964205e7",
+            "role": "user",
+            "content": "I want to open a Pani Puri shop and make the shop available for online ordering through food delivery platforms such as Swiggy. Customers should be able to discover the shop, view the menu, place an order, receive order notifications, and track their delivery.",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_0334802b-a60b-48ef-9520-11172211a380",
+            "role": "assistant",
+            "content": "The business is a Pani Puri shop that will accept online orders through food delivery platforms such as Swiggy, providing customers with menu browsing, ordering, notifications, and live delivery tracking.",
+            "timestamp": "2026-09-25T17:57:20.568Z",
+            "analysis": {
+              "businessUnderstanding": "The business is a Pani Puri shop that will accept online orders through food delivery platforms such as Swiggy, providing customers with menu browsing, ordering, notifications, and live delivery tracking.",
+              "targetUsers": [
+                "Customers",
+                "Shop Owner",
+                "Delivery Partner"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "Customers must be able to search for the shop, view the menu, add items to cart, place an order, and receive order status notifications.",
+                  "evidence": "\"The customer should be able to: Search for the Pani Puri shop. View the shop profile. View the food menu. ... Place an online order. Receive order status notifications.\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "The shop owner must receive instant notifications for new orders and be able to accept or reject orders, update order status, and manage the menu.",
+                  "evidence": "\"The shop owner should be able to: Receive instant notifications for new orders. Accept or reject orders. Update order status. Add menu items. ...\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Delivery partners must receive delivery assignments, share GPS location during active delivery, and update delivery status.",
+                  "evidence": "\"The delivery partner should be able to: Receive delivery assignment. Share GPS location during active delivery. Update delivery status.\"",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "The system must provide live GPS tracking only while the delivery is in progress.",
+                  "evidence": "\"GPS tracking should only be active while the delivery is in progress.\"",
+                  "confidence": 0.9
+                },
+                {
+                  "text": "Order status flow must include PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED, with REJECTED and CANCELLED as alternatives.",
+                  "evidence": "\"The order should have the following statuses: PLACED, ACCEPTED, PREPARING, READY FOR PICKUP, PICKED UP, OUT FOR DELIVERY, DELIVERED. If the shop rejects an order, the status should become REJECTED.\"",
+                  "confidence": 0.9
+                }
+              ],
+              "missingRequirements": [
+                "Payment gateway integration details (e.g., UPI, card, wallet).",
+                "Admin panel for managing shops, users, and delivery partners.",
+                "Analytics and reporting for sales and performance.",
+                "Security and data privacy compliance.",
+                "Integration specifics with Swiggy API (authentication, endpoints)."
+              ],
+              "questions": [
+                "Which payment methods will the shop support and how will they be integrated?",
+                "Will the system use Swiggy’s API for order placement or will it act as a separate platform?",
+                "What level of GPS accuracy and update frequency is required for delivery tracking?",
+                "How will cancellations and refunds be handled?",
+                "What are the expected volume and concurrency requirements for the system?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Integrate with Swiggy’s official API to handle order placement, status updates, and delivery partner assignment.",
+                  "explanation": "Using the official API reduces development effort, ensures compliance with Swiggy’s policies, and provides reliable data exchange.",
+                  "confidence": 0.85
+                },
+                {
+                  "text": "Implement push notifications via Firebase Cloud Messaging or similar to deliver real‑time order updates to customers and shop owners.",
+                  "explanation": "Push notifications provide instant communication, improving user experience and reducing missed orders.",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Use a map service (e.g., Google Maps or Mapbox) for live GPS tracking and route visualization.",
+                  "explanation": "A proven map SDK offers accurate routing, distance estimation, and a polished UI for tracking.",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Design the backend with a microservices architecture separating order, notification, and tracking services.",
+                  "explanation": "This allows independent scaling, easier maintenance, and clearer separation of concerns.",
+                  "confidence": 0.75
+                }
+              ],
+              "assumptions": [
+                "Swiggy provides an API that allows external shops to place orders and receive status updates.",
+                "Customers will use Swiggy’s app for ordering, not a separate custom app.",
+                "The shop has a reliable internet connection for real‑time notifications and GPS updates."
+              ]
+            },
+            "source": "openai"
+          }
+        ]
+      }
+    ],
+    "activeChatId": "chat_2b47ad56-395a-4199-be75-d71b1893563b"
   },
   {
     "id": "test_verify_p1",
@@ -3194,189 +3513,210 @@
         "evidence": "Business intelligence for shop scaling"
       }
     ],
-    "consultantConversation": [
-      {
-        "role": "user",
-        "content": "We want customers to order Pani Puri online from our shop with custom pani options and live delivery tracking."
-      },
-      {
-        "role": "assistant",
-        "content": "I've analyzed your business model for **Royal Pani Puri Express**! Hyperlocal street-food delivery requires tight synchronization between order packaging (to keep puris crisp) and instant driver dispatch.\n\nKey insights extracted:\n1. **Packaging Sensitivity**: Water & puris must be packed separately; prep time is minimal (3-5 minutes).\n2. **Order Dispatching**: Immediate pairing with nearby delivery executives prevents delays.\n3. **Live GPS Tracking**: Real-time telemetry map builds customer anticipation and reduces incoming inquiry calls.",
-        "source": "openai",
-        "analysis": {
-          "businessUnderstanding": "Hyperlocal street food delivery platform with fast kitchen turnaround and live delivery partner dispatch.",
-          "explicitRequirements": [
-            {
-              "text": "Customer ordering with custom flavor variations",
-              "evidence": "User prompt",
-              "confidence": 0.98
-            },
-            {
-              "text": "Live GPS driver tracking",
-              "evidence": "User prompt",
-              "confidence": 0.97
-            },
-            {
-              "text": "Shop order receipt alerts",
-              "evidence": "User prompt",
-              "confidence": 0.95
-            }
-          ],
-          "missingRequirements": [
-            "Separate water packaging selection to maintain puri crispness",
-            "Automated delivery partner proximity dispatch algorithm",
-            "Estimated Time of Arrival (ETA) calculation with live traffic"
-          ],
-          "questions": [
-            "Do you offer scheduled delivery for parties or on-demand only?",
-            "Will the delivery fleet be in-house staff or third-party riders?",
-            "Do you need multi-branch support across multiple city outlets?"
-          ],
-          "recommendations": [
-            {
-              "text": "WebSockets for zero-latency kitchen alerts and live rider coordinates",
-              "explanation": "Eliminates HTTP polling overhead for GPS coordinates",
-              "confidence": 0.95
-            },
-            {
-              "text": "Integrated UPI and Card payments with instant merchant settlements",
-              "explanation": "Prevents delivery cancellation risk",
-              "confidence": 0.92
-            }
-          ]
-        }
-      }
-    ],
+    "consultantConversation": [],
     "blueprint": {
-      "productName": "Royal Pani Puri Express — Order & Fleet Platform",
-      "productDescription": "Complete on-demand hyperlocal street-food ordering, kitchen dispatch, and real-time GPS tracking solution.",
+      "productName": "HMS Pro",
+      "productDescription": "A comprehensive Hospital Management System that centralizes patient records, appointment scheduling, billing, and staff coordination to enhance operational efficiency and patient care.",
       "targetUsers": [
-        "Online Customers",
-        "Shop Owners & Kitchen Staff",
-        "Delivery Fleet Partners",
-        "Business Admin"
-      ],
-      "userRoles": [
-        "customer",
-        "shop_manager",
-        "delivery_partner",
-        "admin"
+        "Hospital Administrator",
+        "Doctor",
+        "Nurse",
+        "Receptionist",
+        "Patient"
       ],
       "coreModules": [
         {
-          "name": "Customer Ordering Portal",
-          "description": "Browse Pani Puri flavours, custom spice/sweet levels, cart & checkout",
+          "id": "auth",
+          "name": "Authentication",
+          "description": "User login, registration, and role-based access control",
           "priority": "must-have"
         },
         {
-          "name": "Kitchen Order Management (KDS)",
-          "description": "Real-time order board with audio chimes and preparation timer",
+          "id": "patientRecords",
+          "name": "Patient Records",
+          "description": "CRUD operations for patient demographics, medical history, and clinical notes",
           "priority": "must-have"
         },
         {
-          "name": "Fleet Dispatch & GPS Tracking",
-          "description": "Driver assignment engine with live geolocation streaming",
+          "id": "appointmentScheduling",
+          "name": "Appointment Scheduling",
+          "description": "Book, reschedule, and cancel appointments with calendar integration",
           "priority": "must-have"
         },
         {
-          "name": "Payment & Billing Gateway",
-          "description": "Secure payments via Razorpay / Stripe with instant digital invoices",
+          "id": "billing",
+          "name": "Billing & Invoicing",
+          "description": "Generate invoices, process payments, and manage insurance claims",
           "priority": "must-have"
         },
         {
-          "name": "Notification Service",
-          "description": "WhatsApp, SMS, and Push notifications for all order lifecycle events",
-          "priority": "high"
+          "id": "staffManagement",
+          "name": "Staff Management",
+          "description": "Manage staff profiles, roles, schedules, and shift assignments",
+          "priority": "should-have"
         },
         {
-          "name": "Analytics & Inventory Dashboard",
-          "description": "Monitor daily sales, top-selling waters, and fleet response times",
-          "priority": "medium"
+          "id": "inventoryManagement",
+          "name": "Inventory Management",
+          "description": "Track medical supplies, equipment, and reorder levels",
+          "priority": "nice-to-have"
+        },
+        {
+          "id": "reporting",
+          "name": "Reporting & Analytics",
+          "description": "Generate operational, financial, and clinical reports",
+          "priority": "nice-to-have"
+        },
+        {
+          "id": "notifications",
+          "name": "Notifications",
+          "description": "Email, SMS, and in-app alerts for appointments, reminders, and system updates",
+          "priority": "nice-to-have"
+        },
+        {
+          "id": "auditTrail",
+          "name": "Audit Trail",
+          "description": "Log all critical actions for compliance and security",
+          "priority": "must-have"
         }
       ],
       "dataEntities": [
         {
-          "name": "Users",
+          "name": "User",
+          "fields": [
+            "id",
+            "email",
+            "password_hash",
+            "role",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Patient",
+          "fields": [
+            "id",
+            "first_name",
+            "last_name",
+            "dob",
+            "gender",
+            "contact_info",
+            "address",
+            "medical_history",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Appointment",
+          "fields": [
+            "id",
+            "patient_id",
+            "staff_id",
+            "scheduled_time",
+            "status",
+            "notes",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Billing",
+          "fields": [
+            "id",
+            "patient_id",
+            "service_description",
+            "amount",
+            "status",
+            "invoice_date",
+            "due_date",
+            "paid_date",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Staff",
+          "fields": [
+            "id",
+            "first_name",
+            "last_name",
+            "role",
+            "department",
+            "contact_info",
+            "schedule",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "InventoryItem",
           "fields": [
             "id",
             "name",
-            "phone",
-            "email",
-            "role",
-            "created_at"
-          ]
-        },
-        {
-          "name": "MenuItems",
-          "fields": [
-            "id",
-            "title",
-            "category",
-            "price",
-            "flavours",
-            "is_available"
-          ]
-        },
-        {
-          "name": "Orders",
-          "fields": [
-            "id",
-            "customer_id",
-            "shop_id",
-            "driver_id",
-            "status",
-            "total_amount",
-            "delivery_address",
-            "created_at"
-          ]
-        },
-        {
-          "name": "OrderItems",
-          "fields": [
-            "id",
-            "order_id",
-            "item_id",
+            "description",
             "quantity",
-            "spice_level",
-            "pani_type"
+            "unit",
+            "reorder_level",
+            "created_at",
+            "updated_at"
           ]
         },
         {
-          "name": "Deliveries",
+          "name": "Notification",
           "fields": [
             "id",
-            "order_id",
-            "driver_id",
-            "current_lat",
-            "current_lng",
-            "eta_minutes",
-            "status"
+            "user_id",
+            "type",
+            "message",
+            "sent_at",
+            "read_at"
           ]
         },
         {
-          "name": "Payments",
+          "name": "AuditLog",
           "fields": [
             "id",
-            "order_id",
-            "transaction_ref",
-            "amount",
-            "method",
-            "status"
+            "user_id",
+            "action",
+            "entity",
+            "entity_id",
+            "timestamp",
+            "details"
           ]
         }
       ],
+      "userRoles": [
+        "admin",
+        "doctor",
+        "nurse",
+        "receptionist",
+        "patient"
+      ],
       "keyFlows": [
-        "Customer customizes Pani Puri pack (e.g. 50 puris + Teekha Pudina + Khatta Meetha) → pays online",
-        "Shop receives instant sound alert → accepts order → begins hygienic vacuum packaging",
-        "System alerts nearby delivery partner → driver accepts and heads to shop",
-        "Driver picks up package → GPS coordinates stream live to customer app",
-        "Delivery partner arrives at customer address → OTP verified → order marked delivered"
+        "Patient registers and logs in",
+        "Receptionist schedules appointment",
+        "Doctor updates patient record",
+        "Billing generates invoice",
+        "Admin generates reports"
+      ],
+      "nonFunctionalRequirements": [
+        "Responsive UI",
+        "Secure password storage",
+        "HIPAA compliance",
+        "Data encryption at rest and in transit",
+        "Scalable architecture",
+        "High availability",
+        "Audit logging",
+        "Backup and recovery",
+        "Performance under load",
+        "Accessibility compliance"
       ],
       "techStack": {
-        "frontend": "React 19 / Vite / Tailwind CSS",
-        "backend": "Node.js / Express / Socket.io",
-        "database": "PostgreSQL + Redis (for live GPS caching)",
-        "deployment": "Docker / Node Server / Render / Railway"
+        "backend": "Node.js",
+        "frontend": "React",
+        "database": "JSON file store",
+        "deployment": "Render"
       }
     },
     "architecture": {
@@ -3493,8 +3833,75 @@
         "read": false
       }
     ],
-    "updatedAt": "2026-09-23T18:58:05.447Z",
-    "createdAt": "2026-09-22T18:15:52.213Z"
+    "updatedAt": "2026-09-25T18:38:41.590Z",
+    "createdAt": "2026-09-22T18:15:52.213Z",
+    "consultant": {
+      "businessUnderstanding": "The business is a restaurant delivery app that allows users to browse menus and track orders in real time.",
+      "targetUsers": [
+        "Restaurant owners",
+        "Customers"
+      ],
+      "explicitRequirements": [
+        {
+          "text": "Provide a menu browsing feature for restaurants",
+          "evidence": "\"Plan a restaurant delivery app with menu and tracking\"",
+          "confidence": 0.9
+        },
+        {
+          "text": "Implement real-time order tracking",
+          "evidence": "\"Plan a restaurant delivery app with menu and tracking\"",
+          "confidence": 0.9
+        },
+        {
+          "text": "Integrate payment gateways suitable for Indian restaurants",
+          "evidence": "\"What payment gateways should we integrate for restaurants in India?\"",
+          "confidence": 0.9
+        }
+      ],
+      "missingRequirements": [
+        "User authentication and profile management",
+        "Restaurant onboarding and menu upload",
+        "Order management and processing backend",
+        "Delivery logistics and rider management",
+        "Payment processing integration",
+        "Analytics and reporting for restaurants",
+        "Customer support and feedback system"
+      ],
+      "questions": [
+        "What is the target customer segment (e.g., local, city-wide, national)?",
+        "Will the app support multiple restaurants on a single platform or separate apps per restaurant?",
+        "What volume of orders do you anticipate in the first year?",
+        "Do you require support for multiple payment methods (cash, card, UPI, wallets)?",
+        "What are the preferred platforms (iOS, Android, web)?"
+      ],
+      "recommendations": [
+        {
+          "text": "Integrate Paytm, Razorpay, and Google Pay as primary payment gateways for Indian restaurants",
+          "explanation": "These gateways have high adoption rates, support UPI, cards, and wallets, and offer robust APIs for seamless integration.",
+          "confidence": 0.8
+        },
+        {
+          "text": "Use a microservices architecture to separate menu, order, and delivery services",
+          "explanation": "This allows independent scaling and easier maintenance as the user base grows.",
+          "confidence": 0.7
+        }
+      ],
+      "assumptions": [
+        "The app will be developed for both iOS and Android platforms",
+        "Restaurants will provide menu data either via API or manual entry"
+      ]
+    },
+    "chats": [
+      {
+        "id": "chat_ef9a286c-f303-4fe8-a5c5-4b8f95c824c4",
+        "projectId": "p_panipuri_express",
+        "title": "New Chat",
+        "createdAt": "2026-09-25T18:38:41.572Z",
+        "updatedAt": "2026-09-25T18:38:41.572Z",
+        "messages": []
+      }
+    ],
+    "activeChatId": "chat_ef9a286c-f303-4fe8-a5c5-4b8f95c824c4"
   },
   {
     "id": "p_mueg3ktuvqlhbi",
@@ -3513,7 +3920,7 @@
       "deployed": true
     },
     "createdAt": "2026-09-23T18:37:27.474Z",
-    "updatedAt": "2026-09-23T18:39:41.519Z",
+    "updatedAt": "2026-09-25T18:41:24.900Z",
     "activity": [
       {
         "timestamp": "2026-09-23T18:37:27.474Z",
@@ -3617,59 +4024,7 @@
         "evidence": "Business intelligence for shop scaling"
       }
     ],
-    "consultantConversation": [
-      {
-        "role": "user",
-        "content": "I want to open a Pani Puri shop and make the shop available for online ordering through food delivery platforms such as Swiggy. Customers should be able to discover the shop, view the menu, place an order, receive order notifications, and track their delivery."
-      },
-      {
-        "role": "assistant",
-        "content": "I've mapped your requirements into the **Royal Pani Puri Express** solution model!\n\n1. **Flavor Customization**: Customers can toggle Teekha, Meetha, Garlic, and Hing water.\n2. **Kitchen Order Notification**: Kitchen tablet sounds an immediate chime when an order arrives.\n3. **Live GPS Fleet Map**: Geolocation tracking connects rider with customer with live ETA countdown.",
-        "analysis": {
-          "businessUnderstanding": "Hyperlocal street food delivery platform with fast kitchen turnaround and live delivery partner dispatch.",
-          "explicitRequirements": [
-            {
-              "text": "Customer ordering with custom flavor variations",
-              "evidence": "User prompt",
-              "confidence": 0.98
-            },
-            {
-              "text": "Live GPS driver tracking",
-              "evidence": "User prompt",
-              "confidence": 0.97
-            },
-            {
-              "text": "Shop order receipt alerts",
-              "evidence": "User prompt",
-              "confidence": 0.95
-            }
-          ],
-          "missingRequirements": [
-            "Separate water packaging selection to maintain puri crispness",
-            "Automated delivery partner proximity dispatch algorithm",
-            "Estimated Time of Arrival (ETA) calculation with live traffic"
-          ],
-          "questions": [
-            "Do you offer scheduled delivery for parties or on-demand only?",
-            "Will the delivery fleet be in-house staff or third-party riders?",
-            "Do you need multi-branch support across multiple city outlets?"
-          ],
-          "recommendations": [
-            {
-              "text": "WebSockets for zero-latency kitchen alerts and live rider coordinates",
-              "explanation": "Eliminates HTTP polling overhead for GPS coordinates",
-              "confidence": 0.95
-            },
-            {
-              "text": "Integrated UPI and Card payments with instant merchant settlements",
-              "explanation": "Prevents delivery cancellation risk",
-              "confidence": 0.92
-            }
-          ]
-        },
-        "source": "domain_engine"
-      }
-    ],
+    "consultantConversation": [],
     "consultant": {
       "businessUnderstanding": "Hyperlocal street food delivery platform with fast kitchen turnaround and live delivery partner dispatch.",
       "explicitRequirements": [
@@ -3917,7 +4272,18 @@
         "at": "2026-09-23T18:39:14.416Z",
         "status": "ok"
       }
-    ]
+    ],
+    "chats": [
+      {
+        "id": "chat_1c94b869-a7f8-4e5f-a3c7-6c03b1c7fa47",
+        "projectId": "p_mueg3ktuvqlhbi",
+        "title": "New Chat",
+        "createdAt": "2026-09-25T18:41:24.883Z",
+        "updatedAt": "2026-09-25T18:41:24.883Z",
+        "messages": []
+      }
+    ],
+    "activeChatId": "chat_1c94b869-a7f8-4e5f-a3c7-6c03b1c7fa47"
   },
   {
     "id": "p_muegicapafzlf9",
@@ -3925,12 +4291,17 @@
     "businessName": "1234",
     "idea": "A Pani Puri shop wants to accept online orders through a Swiggy-like platform. The shop should receive new-order notifications. Customers should be able to track their delivery partner using live GPS.",
     "language": "en",
-    "status": "draft",
+    "status": "generated",
     "progress": {
-      "idea": true
+      "idea": true,
+      "consultant": true,
+      "requirements": true,
+      "blueprint": true,
+      "architecture": true,
+      "build": true
     },
     "createdAt": "2026-09-23T18:48:56.257Z",
-    "updatedAt": "2026-09-23T18:49:16.709Z",
+    "updatedAt": "2026-09-25T18:39:13.871Z",
     "activity": [
       {
         "timestamp": "2026-09-23T18:48:56.258Z",
@@ -3941,7 +4312,485 @@
       }
     ],
     "requirements": "Customer registration/login, browse Pani Puri menu with custom spice & water choices, add products to cart, place order with online payment, shop receives instant order notification, shop prepares order, delivery partner assignment, live GPS tracking, status alerts, order history.",
-    "process": "Currently customers wait in long queues at the counter, or order via phone calls which are often missed. Payments are cash or direct UPI with no automated confirmation. No delivery partner tracking exists."
+    "process": "Currently customers wait in long queues at the counter, or order via phone calls which are often missed. Payments are cash or direct UPI with no automated confirmation. No delivery partner tracking exists.",
+    "consultantConversation": [],
+    "consultant": {
+      "businessUnderstanding": "Hyperlocal street food delivery platform with fast kitchen turnaround and live delivery partner dispatch.",
+      "explicitRequirements": [
+        {
+          "text": "Customer ordering with custom flavor variations",
+          "evidence": "User prompt",
+          "confidence": 0.98
+        },
+        {
+          "text": "Live GPS driver tracking",
+          "evidence": "User prompt",
+          "confidence": 0.97
+        },
+        {
+          "text": "Shop order receipt alerts",
+          "evidence": "User prompt",
+          "confidence": 0.95
+        }
+      ],
+      "missingRequirements": [
+        "Separate water packaging selection to maintain puri crispness",
+        "Automated delivery partner proximity dispatch algorithm",
+        "Estimated Time of Arrival (ETA) calculation with live traffic"
+      ],
+      "questions": [
+        "Do you offer scheduled delivery for parties or on-demand only?",
+        "Will the delivery fleet be in-house staff or third-party riders?",
+        "Do you need multi-branch support across multiple city outlets?"
+      ],
+      "recommendations": [
+        {
+          "text": "WebSockets for zero-latency kitchen alerts and live rider coordinates",
+          "explanation": "Eliminates HTTP polling overhead for GPS coordinates",
+          "confidence": 0.95
+        },
+        {
+          "text": "Integrated UPI and Card payments with instant merchant settlements",
+          "explanation": "Prevents delivery cancellation risk",
+          "confidence": 0.92
+        }
+      ]
+    },
+    "requirements_list": [
+      {
+        "id": "req_1",
+        "text": "Customer authentication via Mobile OTP and Email login",
+        "type": "explicit",
+        "confidence": 0.98,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Core user security requirement"
+      },
+      {
+        "id": "req_2",
+        "text": "Interactive Pani Puri Menu with customizable pani options (Teekha, Meetha, Hing, Garlic) and quantity packs",
+        "type": "explicit",
+        "confidence": 0.95,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Direct business offering"
+      },
+      {
+        "id": "req_3",
+        "text": "Real-time cart & instant digital checkout with Razorpay/Stripe integration",
+        "type": "explicit",
+        "confidence": 0.94,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Payment gateway requirement"
+      },
+      {
+        "id": "req_4",
+        "text": "Shop live order dashboard with audio ring alerts on incoming orders",
+        "type": "explicit",
+        "confidence": 0.92,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Store operations efficiency"
+      },
+      {
+        "id": "req_5",
+        "text": "Kitchen order management (Accept, Preparing, Packed, Ready for Dispatch)",
+        "type": "explicit",
+        "confidence": 0.96,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Order lifecycle management"
+      },
+      {
+        "id": "req_6",
+        "text": "Automated delivery partner assignment based on proximity and shop readiness",
+        "type": "missing",
+        "confidence": 0.88,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Identified gap in delivery workflow"
+      },
+      {
+        "id": "req_7",
+        "text": "Live GPS location tracking of delivery partner on interactive map with ETA",
+        "type": "explicit",
+        "confidence": 0.97,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Explicit customer requirement"
+      },
+      {
+        "id": "req_8",
+        "text": "WhatsApp & SMS notifications for order confirmation, dispatch, and delivery",
+        "type": "recommendation",
+        "confidence": 0.85,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Enhances customer trust and reduces support calls"
+      },
+      {
+        "id": "req_9",
+        "text": "Customer order history, digital receipts, and delivery rating system",
+        "type": "explicit",
+        "confidence": 0.91,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Retention & feedback"
+      },
+      {
+        "id": "req_10",
+        "text": "Admin analytics for top-selling flavours, sales volume, peak hours, and delivery times",
+        "type": "recommendation",
+        "confidence": 0.89,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Business intelligence for shop scaling"
+      }
+    ],
+    "blueprint": {
+      "productName": "PaniPuri Express",
+      "productDescription": "A hyperlocal street‑food delivery platform that lets Pani Puri shops accept online orders, manage kitchen workflows, and dispatch delivery partners with real‑time GPS tracking. Customers can customize their pani, pay instantly, and receive instant notifications throughout the order lifecycle.",
+      "targetUsers": [
+        "Customer",
+        "Shop Owner",
+        "Delivery Partner",
+        "Admin"
+      ],
+      "coreModules": [
+        {
+          "id": "auth",
+          "name": "Authentication",
+          "description": "Customer and shop login via mobile OTP or email, secure password storage",
+          "priority": "must-have"
+        },
+        {
+          "id": "menu",
+          "name": "Menu Management",
+          "description": "Interactive Pani Puri menu with customizable pani options and quantity packs",
+          "priority": "must-have"
+        },
+        {
+          "id": "cart",
+          "name": "Cart & Checkout",
+          "description": "Real‑time cart, instant digital checkout with Razorpay/Stripe integration",
+          "priority": "must-have"
+        },
+        {
+          "id": "order",
+          "name": "Order Management",
+          "description": "Order lifecycle: Pending, Preparing, Packed, Ready, Out for Delivery, Delivered",
+          "priority": "must-have"
+        },
+        {
+          "id": "kitchen",
+          "name": "Kitchen Dashboard",
+          "description": "Live order dashboard with audio alerts and status updates",
+          "priority": "must-have"
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery Tracking",
+          "description": "Live GPS location of delivery partner on interactive map with ETA",
+          "priority": "must-have"
+        },
+        {
+          "id": "notifications",
+          "name": "Notifications",
+          "description": "WhatsApp & SMS alerts for order confirmation, dispatch, and delivery",
+          "priority": "nice-to-have"
+        },
+        {
+          "id": "analytics",
+          "name": "Admin Analytics",
+          "description": "Top‑selling flavours, sales volume, peak hours, delivery times",
+          "priority": "nice-to-have"
+        }
+      ],
+      "dataEntities": [
+        {
+          "name": "User",
+          "fields": [
+            "id",
+            "email",
+            "phone",
+            "name",
+            "role",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Shop",
+          "fields": [
+            "id",
+            "name",
+            "owner_id",
+            "address",
+            "contact",
+            "created_at"
+          ]
+        },
+        {
+          "name": "MenuItem",
+          "fields": [
+            "id",
+            "shop_id",
+            "name",
+            "base_price",
+            "description",
+            "image_url"
+          ]
+        },
+        {
+          "name": "PaniOption",
+          "fields": [
+            "id",
+            "menu_item_id",
+            "name",
+            "price_modifier"
+          ]
+        },
+        {
+          "name": "Order",
+          "fields": [
+            "id",
+            "user_id",
+            "shop_id",
+            "status",
+            "total_amount",
+            "payment_id",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "OrderItem",
+          "fields": [
+            "id",
+            "order_id",
+            "menu_item_id",
+            "pani_option_ids",
+            "quantity",
+            "price"
+          ]
+        },
+        {
+          "name": "DeliveryPartner",
+          "fields": [
+            "id",
+            "name",
+            "phone",
+            "vehicle_type",
+            "current_location",
+            "available"
+          ]
+        },
+        {
+          "name": "Payment",
+          "fields": [
+            "id",
+            "order_id",
+            "gateway",
+            "transaction_id",
+            "status",
+            "amount",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Notification",
+          "fields": [
+            "id",
+            "user_id",
+            "type",
+            "message",
+            "sent_at",
+            "status"
+          ]
+        },
+        {
+          "name": "Analytics",
+          "fields": [
+            "id",
+            "shop_id",
+            "metric",
+            "value",
+            "period_start",
+            "period_end"
+          ]
+        }
+      ],
+      "userRoles": [
+        "customer",
+        "shop_owner",
+        "delivery_partner",
+        "admin"
+      ],
+      "keyFlows": [
+        "Customer registers and logs in",
+        "Customer browses menu and customizes pani options",
+        "Customer adds items to cart and checks out with Razorpay/Stripe",
+        "Shop receives instant order notification and updates kitchen status",
+        "Delivery partner is assigned, receives order details, and tracks live GPS",
+        "Customer tracks delivery partner on map and receives ETA",
+        "Customer receives order confirmation, dispatch, and delivery notifications",
+        "Admin views analytics dashboards for sales and operations"
+      ],
+      "nonFunctionalRequirements": [
+        "Responsive UI across mobile and desktop",
+        "Secure password storage with bcrypt",
+        "OTP verification via SMS gateway",
+        "Real‑time updates using WebSocket/Socket.io",
+        "Payment gateway integration with Razorpay and Stripe",
+        "GDPR compliant data handling",
+        "Scalable architecture with micro‑services",
+        "High availability and fault tolerance",
+        "Low latency for order placement and status updates",
+        "WhatsApp and SMS notification integration",
+        "Interactive map with Google Maps API",
+        "Push notifications for order status changes"
+      ],
+      "techStack": {
+        "backend": "Node.js with Express",
+        "frontend": "React with TypeScript",
+        "database": "MongoDB Atlas",
+        "deployment": "Render (or AWS ECS/Fargate)",
+        "realTime": "Socket.io",
+        "payment": "Razorpay & Stripe SDKs",
+        "notifications": "Twilio for SMS/WhatsApp",
+        "maps": "Google Maps JavaScript API"
+      }
+    },
+    "architecture": {
+      "systemDiagram": "graph TD\n  Customer[📱 Customer Mobile Web] -->|HTTP / WebSocket| Gateway[API Gateway / Node.js]\n  Shop[🖥️ Shop Kitchen Dashboard] -->|WebSocket Listen| Gateway\n  Driver[🛵 Delivery Partner App] -->|GPS Streaming| Gateway\n  Gateway --> Auth[🔐 Auth & Security Service]\n  Gateway --> OrderService[📦 Order Management Engine]\n  Gateway --> TrackingService[📍 Real-time GPS Tracker]\n  Gateway --> PaymentService[💳 Razorpay Gateway]\n  TrackingService --> Redis[(⚡ Redis Live Coordinates)]\n  OrderService --> DB[(🗄️ PostgreSQL Database)]\n  OrderService --> Notif[🔔 WhatsApp / SMS Service]",
+      "erDiagram": "erDiagram\n  USERS ||--o{ ORDERS : places\n  SHOPS ||--o{ ORDERS : fulfills\n  ORDERS ||--|{ ORDER_ITEMS : contains\n  ORDERS ||--|| DELIVERIES : dispatched_via\n  DELIVERIES ||--o{ GPS_LOGS : records\n  ORDERS ||--|| PAYMENTS : settled_by\n  MENU_ITEMS ||--o{ ORDER_ITEMS : specified_in",
+      "apiEndpoints": [
+        {
+          "method": "POST",
+          "path": "/api/orders",
+          "description": "Create and initialize a new Pani Puri order",
+          "auth": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/orders/:id",
+          "description": "Retrieve order details, items and current status",
+          "auth": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/orders/:id/status",
+          "description": "Update status (preparing, ready, dispatched, delivered)",
+          "auth": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/delivery/assign",
+          "description": "Assign nearest delivery partner to order",
+          "auth": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/delivery/:orderId/location",
+          "description": "Fetch live GPS latitude/longitude and ETA",
+          "auth": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/payments/verify",
+          "description": "Verify payment gateway signature and webhook",
+          "auth": true
+        }
+      ],
+      "sitemap": [
+        "/ (Customer Order Front & Menu)",
+        "/cart (Custom Flavor Picker & Checkout)",
+        "/tracking/:id (Live GPS Delivery Map)",
+        "/shop/dashboard (Kitchen Order Display System)",
+        "/driver/portal (Delivery Partner Order & Navigation)",
+        "/admin/analytics (Sales & Business Reports)"
+      ],
+      "securityNotes": [
+        "JWT tokens with HttpOnly cookies for customer and staff sessions",
+        "Rate limiting on order endpoints to prevent fake traffic surges",
+        "HMAC SHA-256 signature verification for payment webhooks",
+        "Obfuscation of customer phone numbers between driver and buyer"
+      ]
+    },
+    "generationSpec": {
+      "appName": "PaniPuri Express",
+      "businessName": "PaniPuri Delivery Co.",
+      "entityName": "Order",
+      "entityNamePlural": "Orders",
+      "entityFields": [
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "shop_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "total_amount",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "payment_id",
+          "type": "text",
+          "required": true
+        }
+      ],
+      "modules": [
+        "auth",
+        "menu",
+        "cart",
+        "order",
+        "kitchen",
+        "delivery",
+        "notifications",
+        "analytics"
+      ],
+      "userRoles": [
+        "customer",
+        "shop_owner",
+        "delivery_partner",
+        "admin"
+      ],
+      "pages": [
+        "index.html",
+        "login.html",
+        "register.html"
+      ]
+    },
+    "versions": [
+      {
+        "version": "1.1.9",
+        "changes": "Initial app generated from blueprint",
+        "at": "2026-09-24T05:31:12.384Z",
+        "status": "ok"
+      }
+    ],
+    "chats": [
+      {
+        "id": "chat_ad156caa-0c15-4887-bdb2-2ceb74900b8f",
+        "projectId": "p_muegicapafzlf9",
+        "title": "New Chat",
+        "createdAt": "2026-09-25T18:39:13.855Z",
+        "updatedAt": "2026-09-25T18:39:13.855Z",
+        "messages": []
+      }
+    ],
+    "activeChatId": "chat_ad156caa-0c15-4887-bdb2-2ceb74900b8f"
   },
   {
     "id": "p_muf27adsjit4de",
@@ -3959,7 +4808,7 @@
       "build": true
     },
     "createdAt": "2026-09-24T04:56:12.112Z",
-    "updatedAt": "2026-09-24T05:00:02.572Z",
+    "updatedAt": "2026-09-25T18:39:33.329Z",
     "activity": [
       {
         "timestamp": "2026-09-24T04:56:12.112Z",
@@ -3971,219 +4820,7 @@
     ],
     "requirements": "Patient registration\nAppointment workflow\nDoctor dashboard\nNotifications\nPatient records\nDatabase relationships\nAPIs\nAI/automation opportunities",
     "process": "",
-    "consultantConversation": [
-      {
-        "role": "user",
-        "content": "A small clinic wants an online system where patients can book appointments, doctors can manage schedules, patients receive reminders, and doctors can access patient history."
-      },
-      {
-        "role": "assistant",
-        "content": "The clinic seeks a web-based platform that allows patients to register and book appointments, while doctors can view and manage their schedules. The system will also send reminders to patients and provide doctors with access to patient histories.",
-        "analysis": {
-          "businessUnderstanding": "The clinic seeks a web-based platform that allows patients to register and book appointments, while doctors can view and manage their schedules. The system will also send reminders to patients and provide doctors with access to patient histories.",
-          "targetUsers": [
-            "Patients",
-            "Doctors"
-          ],
-          "explicitRequirements": [
-            {
-              "text": "Patient registration",
-              "evidence": "Project context: Patient registration",
-              "confidence": 0.95
-            },
-            {
-              "text": "Appointment workflow",
-              "evidence": "Project context: Appointment workflow",
-              "confidence": 0.95
-            },
-            {
-              "text": "Doctor dashboard",
-              "evidence": "Project context: Doctor dashboard",
-              "confidence": 0.95
-            },
-            {
-              "text": "Notifications",
-              "evidence": "Project context: Notifications",
-              "confidence": 0.95
-            },
-            {
-              "text": "Patient records",
-              "evidence": "Project context: Patient records",
-              "confidence": 0.95
-            },
-            {
-              "text": "Database relationships",
-              "evidence": "Project context: Database relationships",
-              "confidence": 0.95
-            },
-            {
-              "text": "APIs",
-              "evidence": "Project context: APIs",
-              "confidence": 0.95
-            },
-            {
-              "text": "AI/automation opportunities",
-              "evidence": "Project context: AI/automation opportunities",
-              "confidence": 0.95
-            }
-          ],
-          "missingRequirements": [
-            "Billing and payment processing",
-            "Insurance claim integration",
-            "Role-based access control",
-            "Audit logging and compliance",
-            "Mobile app or responsive design",
-            "Data backup and disaster recovery"
-          ],
-          "questions": [
-            "What types of appointments (e.g., telehealth, in-person) should the system support?",
-            "What specific patient data fields are required for the medical history?",
-            "How should reminders be delivered (SMS, email, push notification)?",
-            "What AI or automation features are you envisioning (e.g., auto-scheduling, symptom triage)?",
-            "Do you need integration with existing electronic health record (EHR) systems?"
-          ],
-          "recommendations": [
-            {
-              "text": "Implement role-based access control to secure patient data and restrict doctor access to relevant records",
-              "explanation": "Ensures compliance with privacy regulations and protects sensitive health information",
-              "confidence": 0.85
-            },
-            {
-              "text": "Use a calendar API (e.g., Google Calendar, Outlook) for doctor scheduling to avoid double bookings",
-              "explanation": "Provides real-time availability and reduces scheduling errors",
-              "confidence": 0.8
-            },
-            {
-              "text": "Integrate SMS and email notification services for appointment reminders",
-              "explanation": "Improves patient adherence and reduces no‑show rates",
-              "confidence": 0.8
-            },
-            {
-              "text": "Design a RESTful API layer to allow future integrations with third‑party services or mobile apps",
-              "explanation": "Facilitates extensibility and modularity of the system",
-              "confidence": 0.8
-            },
-            {
-              "text": "Consider a lightweight AI chatbot for triage or FAQ to reduce administrative load",
-              "explanation": "Provides instant patient support and frees staff time",
-              "confidence": 0.75
-            }
-          ],
-          "assumptions": [
-            "Clinic staff and patients have reliable internet access",
-            "Doctors will use computers or tablets to access the dashboard",
-            "The clinic has a basic IT infrastructure to host the application"
-          ]
-        },
-        "source": "openai"
-      },
-      {
-        "role": "user",
-        "content": "A small clinic wants an online system where patients can book appointments, doctors can manage schedules, patients receive reminders, and doctors can access patient history."
-      },
-      {
-        "role": "assistant",
-        "content": "The clinic seeks a web-based platform that allows patients to register and book appointments, while doctors can view and manage their schedules. The system will also send reminders to patients and provide doctors with access to patient histories.",
-        "analysis": {
-          "businessUnderstanding": "The clinic seeks a web-based platform that allows patients to register and book appointments, while doctors can view and manage their schedules. The system will also send reminders to patients and provide doctors with access to patient histories.",
-          "targetUsers": [
-            "Patients",
-            "Doctors",
-            "Clinic Staff"
-          ],
-          "explicitRequirements": [
-            {
-              "text": "Patient registration",
-              "evidence": "\"Patient registration\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "Appointment workflow",
-              "evidence": "\"Appointment workflow\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "Doctor dashboard",
-              "evidence": "\"Doctor dashboard\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "Notifications",
-              "evidence": "\"Notifications\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "Patient records",
-              "evidence": "\"Patient records\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "Database relationships",
-              "evidence": "\"Database relationships\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "APIs",
-              "evidence": "\"APIs\"",
-              "confidence": 0.95
-            },
-            {
-              "text": "AI/automation opportunities",
-              "evidence": "\"AI/automation opportunities\"",
-              "confidence": 0.95
-            }
-          ],
-          "missingRequirements": [
-            "Security and data privacy compliance",
-            "Payment processing",
-            "Reporting and analytics",
-            "Integration with existing EMR systems",
-            "Mobile app support"
-          ],
-          "questions": [
-            "What authentication methods are preferred for patients and doctors?",
-            "Will the system need to integrate with any existing patient record systems?",
-            "Which notification channels (SMS, email, push) are required?",
-            "Is there a need for a mobile application or will a responsive web app suffice?",
-            "What is the expected budget and timeline for delivery?"
-          ],
-          "recommendations": [
-            {
-              "text": "Implement role-based access control to secure patient data and restrict doctor access to their own patients.",
-              "explanation": "Ensures compliance with privacy regulations and protects sensitive health information.",
-              "confidence": 0.85
-            },
-            {
-              "text": "Use a calendar API (e.g., Google Calendar or Outlook) for doctor schedule management and to avoid double-booking.",
-              "explanation": "Provides a familiar interface for doctors and reduces scheduling conflicts.",
-              "confidence": 0.8
-            },
-            {
-              "text": "Integrate an email/SMS service (e.g., Twilio) for appointment reminders and confirmations.",
-              "explanation": "Improves patient engagement and reduces no-show rates.",
-              "confidence": 0.8
-            },
-            {
-              "text": "Adopt the HL7 FHIR standard for patient records to facilitate future integration with larger health systems.",
-              "explanation": "Ensures interoperability and eases data exchange if the clinic expands.",
-              "confidence": 0.75
-            },
-            {
-              "text": "Explore AI-driven appointment slot optimization to suggest optimal times based on historical data.",
-              "explanation": "Increases efficiency and can reduce patient wait times.",
-              "confidence": 0.7
-            }
-          ],
-          "assumptions": [
-            "The clinic currently has no electronic medical record system in place.",
-            "Users will primarily access the system via web browsers.",
-            "The project budget is moderate and does not allow for a fully custom mobile app.",
-            "Compliance with local data privacy regulations (e.g., GDPR, HIPAA) is required."
-          ]
-        },
-        "source": "openai"
-      }
-    ],
+    "consultantConversation": [],
     "consultant": {
       "businessUnderstanding": "The clinic seeks a web-based platform that allows patients to register and book appointments, while doctors can view and manage their schedules. The system will also send reminders to patients and provide doctors with access to patient histories.",
       "targetUsers": [
@@ -4729,6 +5366,712 @@
         "at": "2026-09-24T05:00:02.565Z",
         "status": "ok"
       }
-    ]
+    ],
+    "chats": [
+      {
+        "id": "chat_f344e5a0-c4a4-436d-8a59-0e619d831b80",
+        "projectId": "p_muf27adsjit4de",
+        "title": "New Chat",
+        "createdAt": "2026-09-25T18:39:33.314Z",
+        "updatedAt": "2026-09-25T18:39:33.314Z",
+        "messages": []
+      }
+    ],
+    "activeChatId": "chat_f344e5a0-c4a4-436d-8a59-0e619d831b80"
+  },
+  {
+    "id": "p_muh82jxfyfw6tt",
+    "name": "Hospital Management",
+    "businessName": "Clinic & Hospital Management",
+    "idea": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+    "language": "en",
+    "status": "generated",
+    "progress": {
+      "idea": true,
+      "consultant": true,
+      "requirements": true,
+      "blueprint": true,
+      "architecture": true,
+      "build": true
+    },
+    "createdAt": "2026-09-25T17:16:01.251Z",
+    "updatedAt": "2026-09-25T18:27:16.672Z",
+    "activity": [
+      {
+        "timestamp": "2026-09-25T17:16:01.251Z",
+        "actor": "User",
+        "action": "Project created",
+        "module": "Discovery",
+        "status": "Completed"
+      }
+    ],
+    "requirements": "",
+    "process": "",
+    "consultantConversation": [
+      {
+        "id": "chat_42bf95b9-a050-4cc2-a8eb-aabf77da731c",
+        "role": "user",
+        "content": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+        "timestamp": "2026-09-25T17:58:29.170Z",
+        "analysis": null,
+        "source": null
+      },
+      {
+        "id": "chat_a1116c22-8450-43de-97c4-fcd8cafdff7f",
+        "role": "user",
+        "content": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+        "timestamp": "2026-09-25T17:59:34.341Z",
+        "analysis": null,
+        "source": null
+      }
+    ],
+    "consultant": {
+      "businessUnderstanding": "The business offers a comprehensive digital management platform for clinics and hospitals, enabling patients to register, view doctors, book appointments, and access basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up care, while hospital staff handle departments, billing, and daily operations. A dashboard provides real-time statistics such as appointments, admissions, pending bills, and doctor availability.",
+      "targetUsers": [
+        "Patients",
+        "Doctors",
+        "Hospital Staff"
+      ],
+      "explicitRequirements": [
+        {
+          "text": "Patients can register, view doctors, book appointments, and access basic medical information",
+          "evidence": "Patients can register, view doctors, book appointments, and access their basic medical information.",
+          "confidence": 0.95
+        },
+        {
+          "text": "Doctors can manage appointments, patient records, prescriptions, and follow-up information",
+          "evidence": "Doctors can manage appointments, patient records, prescriptions, and follow-up information.",
+          "confidence": 0.95
+        },
+        {
+          "text": "Hospital staff can manage departments, doctors, patients, billing, and daily operations",
+          "evidence": "Hospital staff can manage departments, doctors, patients, billing, and daily operations.",
+          "confidence": 0.95
+        },
+        {
+          "text": "Dashboard displays today's appointments, admitted patients, pending bills, available doctors, and other useful statistics",
+          "evidence": "The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+          "confidence": 0.95
+        }
+      ],
+      "missingRequirements": [
+        "User authentication and role-based access control",
+        "Data security and privacy compliance (e.g., HIPAA)",
+        "Integration with existing electronic medical record (EMR) systems",
+        "Payment processing for billing",
+        "Mobile application support",
+        "Audit logging and reporting",
+        "Scalability and performance considerations",
+        "Disaster recovery and backup strategy"
+      ],
+      "questions": [
+        "What technology stack and deployment model are preferred (cloud, on-premises, hybrid)?",
+        "Which regulatory standards (HIPAA, GDPR, etc.) must the system comply with?",
+        "Will the system need to integrate with existing EMR or billing software?",
+        "What are the expected user volumes and concurrency requirements?",
+        "Do you require a mobile app for patients or staff?"
+      ],
+      "recommendations": [
+        {
+          "text": "Implement role-based access control to secure sensitive patient data",
+          "explanation": "Ensures only authorized users can view or edit specific information, meeting privacy regulations.",
+          "confidence": 0.8
+        },
+        {
+          "text": "Adopt HL7/FHIR standards for interoperability with other healthcare systems",
+          "explanation": "Facilitates seamless data exchange with existing EMR and external labs.",
+          "confidence": 0.8
+        },
+        {
+          "text": "Design a responsive web interface with optional native mobile apps for patients and staff",
+          "explanation": "Improves accessibility and user adoption across devices.",
+          "confidence": 0.8
+        },
+        {
+          "text": "Use a microservices architecture to isolate core modules (appointments, billing, records) for scalability",
+          "explanation": "Allows independent scaling and easier maintenance of high-traffic components.",
+          "confidence": 0.8
+        }
+      ],
+      "assumptions": [
+        "The system will be web-based with optional mobile support",
+        "Users will authenticate via a secure login mechanism",
+        "The platform will be hosted in a cloud environment for scalability"
+      ]
+    },
+    "requirements_list": [
+      {
+        "id": "req_1",
+        "text": "Customer authentication via Mobile OTP and Email login",
+        "type": "explicit",
+        "confidence": 0.98,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Core user security requirement"
+      },
+      {
+        "id": "req_2",
+        "text": "Interactive Pani Puri Menu with customizable pani options (Teekha, Meetha, Hing, Garlic) and quantity packs",
+        "type": "explicit",
+        "confidence": 0.95,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Direct business offering"
+      },
+      {
+        "id": "req_3",
+        "text": "Real-time cart & instant digital checkout with Razorpay/Stripe integration",
+        "type": "explicit",
+        "confidence": 0.94,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Payment gateway requirement"
+      },
+      {
+        "id": "req_4",
+        "text": "Shop live order dashboard with audio ring alerts on incoming orders",
+        "type": "explicit",
+        "confidence": 0.92,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Store operations efficiency"
+      },
+      {
+        "id": "req_5",
+        "text": "Kitchen order management (Accept, Preparing, Packed, Ready for Dispatch)",
+        "type": "explicit",
+        "confidence": 0.96,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Order lifecycle management"
+      },
+      {
+        "id": "req_6",
+        "text": "Automated delivery partner assignment based on proximity and shop readiness",
+        "type": "missing",
+        "confidence": 0.88,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Identified gap in delivery workflow"
+      },
+      {
+        "id": "req_7",
+        "text": "Live GPS location tracking of delivery partner on interactive map with ETA",
+        "type": "explicit",
+        "confidence": 0.97,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Explicit customer requirement"
+      },
+      {
+        "id": "req_8",
+        "text": "WhatsApp & SMS notifications for order confirmation, dispatch, and delivery",
+        "type": "recommendation",
+        "confidence": 0.85,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Enhances customer trust and reduces support calls"
+      },
+      {
+        "id": "req_9",
+        "text": "Customer order history, digital receipts, and delivery rating system",
+        "type": "explicit",
+        "confidence": 0.91,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Retention & feedback"
+      },
+      {
+        "id": "req_10",
+        "text": "Admin analytics for top-selling flavours, sales volume, peak hours, and delivery times",
+        "type": "recommendation",
+        "confidence": 0.89,
+        "state": "accepted",
+        "source": "consultant",
+        "evidence": "Business intelligence for shop scaling"
+      }
+    ],
+    "blueprint": {
+      "productName": "ClinicPlus & PaniPuri",
+      "productDescription": "A unified digital platform that combines a comprehensive clinic and hospital management system with a real‑time Pani Puri ordering and delivery service, enabling patients, doctors, staff, and customers to manage health and food needs from a single interface.",
+      "targetUsers": [
+        "Patients",
+        "Doctors",
+        "Hospital Staff",
+        "Customers",
+        "Delivery Partners",
+        "Admins"
+      ],
+      "coreModules": [
+        {
+          "id": "auth",
+          "name": "Authentication",
+          "description": "Mobile OTP and Email login for all user types",
+          "priority": "must-have"
+        },
+        {
+          "id": "patient",
+          "name": "Patient Management",
+          "description": "Patient registration, profile, medical info, and appointment booking",
+          "priority": "must-have"
+        },
+        {
+          "id": "doctor",
+          "name": "Doctor Management",
+          "description": "Doctor profiles, appointment schedules, prescriptions, and follow‑ups",
+          "priority": "must-have"
+        },
+        {
+          "id": "staff",
+          "name": "Staff & Operations",
+          "description": "Department, staff, billing, and daily operations management",
+          "priority": "must-have"
+        },
+        {
+          "id": "dashboard",
+          "name": "Analytics Dashboard",
+          "description": "Real‑time stats for appointments, admissions, bills, and sales analytics",
+          "priority": "must-have"
+        },
+        {
+          "id": "menu",
+          "name": "Pani Puri Menu",
+          "description": "Interactive menu with customizable pani options and quantity packs",
+          "priority": "must-have"
+        },
+        {
+          "id": "cart",
+          "name": "Shopping Cart & Checkout",
+          "description": "Real‑time cart, instant digital checkout via Razorpay/Stripe",
+          "priority": "must-have"
+        },
+        {
+          "id": "order",
+          "name": "Order Management",
+          "description": "Live order dashboard, kitchen workflow (Accept, Preparing, Packed, Ready for Dispatch)",
+          "priority": "must-have"
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery Tracking",
+          "description": "Live GPS tracking of delivery partner, ETA display, and delivery rating",
+          "priority": "must-have"
+        },
+        {
+          "id": "notifications",
+          "name": "Notifications",
+          "description": "WhatsApp & SMS alerts for order confirmation, dispatch, and delivery",
+          "priority": "must-have"
+        },
+        {
+          "id": "history",
+          "name": "Order History & Receipts",
+          "description": "Customer order history, digital receipts, and rating system",
+          "priority": "must-have"
+        }
+      ],
+      "dataEntities": [
+        {
+          "name": "User",
+          "fields": [
+            "id",
+            "email",
+            "phone",
+            "name",
+            "role",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Patient",
+          "fields": [
+            "id",
+            "user_id",
+            "medical_history",
+            "insurance_info",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Doctor",
+          "fields": [
+            "id",
+            "user_id",
+            "specialty",
+            "department_id",
+            "schedule",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Appointment",
+          "fields": [
+            "id",
+            "patient_id",
+            "doctor_id",
+            "datetime",
+            "status",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Prescription",
+          "fields": [
+            "id",
+            "appointment_id",
+            "doctor_id",
+            "patient_id",
+            "medications",
+            "notes",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Department",
+          "fields": [
+            "id",
+            "name",
+            "head_id",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Billing",
+          "fields": [
+            "id",
+            "patient_id",
+            "amount",
+            "status",
+            "created_at"
+          ]
+        },
+        {
+          "name": "MenuItem",
+          "fields": [
+            "id",
+            "name",
+            "base_price",
+            "options",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Order",
+          "fields": [
+            "id",
+            "user_id",
+            "items",
+            "total",
+            "status",
+            "created_at"
+          ]
+        },
+        {
+          "name": "DeliveryPartner",
+          "fields": [
+            "id",
+            "user_id",
+            "vehicle_type",
+            "current_location",
+            "available",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Notification",
+          "fields": [
+            "id",
+            "user_id",
+            "type",
+            "message",
+            "sent_at",
+            "read_at"
+          ]
+        }
+      ],
+      "userRoles": [
+        "admin",
+        "patient",
+        "doctor",
+        "staff",
+        "customer",
+        "delivery"
+      ],
+      "keyFlows": [
+        "User registers and logs in via OTP or Email",
+        "Patient books an appointment with a doctor",
+        "Doctor manages appointments and prescribes medication",
+        "Hospital staff handles billing and department operations",
+        "Customer selects Pani Puri menu, customizes pani options, and adds to cart",
+        "Customer checks out instantly using Razorpay/Stripe",
+        "Order appears on live dashboard and kitchen workflow updates",
+        "Delivery partner receives order, updates status, and is tracked on map",
+        "Customer receives WhatsApp/SMS notifications and rates delivery",
+        "Admin views analytics on top‑selling flavours, sales volume, peak hours, and delivery times"
+      ],
+      "nonFunctionalRequirements": [
+        "Responsive UI for web and mobile",
+        "Secure password and OTP storage",
+        "Real‑time updates via WebSocket",
+        "Scalable database with ACID compliance",
+        "GDPR and HIPAA compliant data handling",
+        "High availability and disaster recovery",
+        "Performance SLA: <200ms response time for core actions",
+        "Audit logging for all critical operations"
+      ],
+      "techStack": {
+        "backend": "Node.js (Express)",
+        "frontend": "React with TypeScript",
+        "database": "PostgreSQL",
+        "realTime": "Socket.io",
+        "payment": "Razorpay & Stripe SDKs",
+        "notifications": "Twilio API for WhatsApp & SMS",
+        "maps": "Google Maps JavaScript API",
+        "deployment": "Render (Web & Worker)",
+        "CI/CD": "GitHub Actions"
+      }
+    },
+    "architecture": {
+      "systemDiagram": "graph TD\n  Customer[📱 Customer Mobile Web] -->|HTTP / WebSocket| Gateway[API Gateway / Node.js]\n  Shop[🖥️ Shop Kitchen Dashboard] -->|WebSocket Listen| Gateway\n  Driver[🛵 Delivery Partner App] -->|GPS Streaming| Gateway\n  Gateway --> Auth[🔐 Auth & Security Service]\n  Gateway --> OrderService[📦 Order Management Engine]\n  Gateway --> TrackingService[📍 Real-time GPS Tracker]\n  Gateway --> PaymentService[💳 Razorpay Gateway]\n  TrackingService --> Redis[(⚡ Redis Live Coordinates)]\n  OrderService --> DB[(🗄️ PostgreSQL Database)]\n  OrderService --> Notif[🔔 WhatsApp / SMS Service]",
+      "erDiagram": "erDiagram\n  USERS ||--o{ ORDERS : places\n  SHOPS ||--o{ ORDERS : fulfills\n  ORDERS ||--|{ ORDER_ITEMS : contains\n  ORDERS ||--|| DELIVERIES : dispatched_via\n  DELIVERIES ||--o{ GPS_LOGS : records\n  ORDERS ||--|| PAYMENTS : settled_by\n  MENU_ITEMS ||--o{ ORDER_ITEMS : specified_in",
+      "apiEndpoints": [
+        {
+          "method": "POST",
+          "path": "/api/orders",
+          "description": "Create and initialize a new Pani Puri order",
+          "auth": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/orders/:id",
+          "description": "Retrieve order details, items and current status",
+          "auth": true
+        },
+        {
+          "method": "PUT",
+          "path": "/api/orders/:id/status",
+          "description": "Update status (preparing, ready, dispatched, delivered)",
+          "auth": true
+        },
+        {
+          "method": "POST",
+          "path": "/api/delivery/assign",
+          "description": "Assign nearest delivery partner to order",
+          "auth": true
+        },
+        {
+          "method": "GET",
+          "path": "/api/delivery/:orderId/location",
+          "description": "Fetch live GPS latitude/longitude and ETA",
+          "auth": false
+        },
+        {
+          "method": "POST",
+          "path": "/api/payments/verify",
+          "description": "Verify payment gateway signature and webhook",
+          "auth": true
+        }
+      ],
+      "sitemap": [
+        "/ (Customer Order Front & Menu)",
+        "/cart (Custom Flavor Picker & Checkout)",
+        "/tracking/:id (Live GPS Delivery Map)",
+        "/shop/dashboard (Kitchen Order Display System)",
+        "/driver/portal (Delivery Partner Order & Navigation)",
+        "/admin/analytics (Sales & Business Reports)"
+      ],
+      "securityNotes": [
+        "JWT tokens with HttpOnly cookies for customer and staff sessions",
+        "Rate limiting on order endpoints to prevent fake traffic surges",
+        "HMAC SHA-256 signature verification for payment webhooks",
+        "Obfuscation of customer phone numbers between driver and buyer"
+      ]
+    },
+    "generationSpec": {
+      "appName": "ClinicPlus & PaniPuri",
+      "businessName": "Health & Food Solutions",
+      "entityName": "Order",
+      "entityNamePlural": "Orders",
+      "entityFields": [
+        {
+          "name": "patient_id",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "doctor_id",
+          "type": "number",
+          "required": true
+        },
+        {
+          "name": "datetime",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "required": true
+        }
+      ],
+      "modules": [
+        "auth",
+        "patient",
+        "doctor",
+        "staff",
+        "dashboard",
+        "menu",
+        "cart",
+        "order",
+        "delivery",
+        "notifications",
+        "history"
+      ],
+      "userRoles": [
+        "admin",
+        "patient",
+        "doctor",
+        "staff",
+        "customer",
+        "delivery"
+      ],
+      "pages": [
+        "index.html",
+        "login.html",
+        "register.html",
+        "dashboard.html",
+        "patient.html",
+        "doctor.html",
+        "staff.html",
+        "menu.html",
+        "cart.html",
+        "order.html",
+        "delivery.html",
+        "notifications.html",
+        "history.html"
+      ]
+    },
+    "versions": [
+      {
+        "version": "1.1.9",
+        "changes": "Initial app generated from blueprint",
+        "at": "2026-09-25T17:16:52.499Z",
+        "status": "ok"
+      }
+    ],
+    "chats": [
+      {
+        "id": "chat_05d55784-24c4-4683-bed3-a006c3251e34",
+        "title": "A complete digital management sys...",
+        "createdAt": "2026-09-25T17:57:58.901Z",
+        "updatedAt": "2026-09-25T17:59:34.341Z",
+        "messages": [
+          {
+            "id": "chat_42bf95b9-a050-4cc2-a8eb-aabf77da731c",
+            "role": "user",
+            "content": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+            "timestamp": "2026-09-25T17:58:29.170Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_a1116c22-8450-43de-97c4-fcd8cafdff7f",
+            "role": "user",
+            "content": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+            "timestamp": "2026-09-25T17:59:34.341Z",
+            "analysis": null,
+            "source": null
+          }
+        ]
+      },
+      {
+        "id": "chat_1b4e6be7-6d5b-4bf6-9a4f-d64c38134522",
+        "title": "Main Conversation",
+        "createdAt": "2026-09-25T17:57:20.567Z",
+        "updatedAt": "2026-09-25T17:57:20.567Z",
+        "messages": [
+          {
+            "id": "chat_fd0239f8-d8d4-4589-ab53-f1912b56dc66",
+            "role": "user",
+            "content": "A complete digital management system for clinics and hospitals. Patients can register, view doctors, book appointments, and access their basic medical information. Doctors can manage appointments, patient records, prescriptions, and follow-up information. Hospital staff can manage departments, doctors, patients, billing, and daily operations. The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+            "timestamp": "2026-09-25T17:57:20.567Z",
+            "analysis": null,
+            "source": null
+          },
+          {
+            "id": "chat_df685c7c-9e73-4160-a6f9-ee90ba0c3c9f",
+            "role": "assistant",
+            "content": "A digital management system for clinics and hospitals that lets patients register, view doctors, book appointments, and access basic medical information; doctors manage appointments, patient records, prescriptions, and follow-ups; hospital staff manage departments, doctors, patients, billing, and daily operations, with a dashboard displaying key statistics.",
+            "timestamp": "2026-09-25T17:57:20.567Z",
+            "analysis": {
+              "businessUnderstanding": "A digital management system for clinics and hospitals that lets patients register, view doctors, book appointments, and access basic medical information; doctors manage appointments, patient records, prescriptions, and follow-ups; hospital staff manage departments, doctors, patients, billing, and daily operations, with a dashboard displaying key statistics.",
+              "targetUsers": [
+                "Patients",
+                "Doctors",
+                "Hospital Staff"
+              ],
+              "explicitRequirements": [
+                {
+                  "text": "Patients can register, view doctors, book appointments, and access their basic medical information",
+                  "evidence": "Patients can register, view doctors, book appointments, and access their basic medical information.",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Doctors can manage appointments, patient records, prescriptions, and follow-up information",
+                  "evidence": "Doctors can manage appointments, patient records, prescriptions, and follow-up information.",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Hospital staff can manage departments, doctors, patients, billing, and daily operations",
+                  "evidence": "Hospital staff can manage departments, doctors, patients, billing, and daily operations.",
+                  "confidence": 0.95
+                },
+                {
+                  "text": "Dashboard displays today's appointments, admitted patients, pending bills, available doctors, and other useful statistics",
+                  "evidence": "The dashboard can show today's appointments, admitted patients, pending bills, available doctors, and other useful statistics.",
+                  "confidence": 0.95
+                }
+              ],
+              "missingRequirements": [
+                "Security and privacy compliance (e.g., HIPAA, GDPR)",
+                "Integration with existing EMR/EHR systems",
+                "Mobile app or mobile-responsive interface",
+                "Payment processing for billing",
+                "Advanced reporting and analytics beyond the dashboard"
+              ],
+              "questions": [
+                "What specific billing functionalities are required?",
+                "Does the system need to integrate with existing EMR/EHR systems?",
+                "What level of user authentication and role-based access control is needed?"
+              ],
+              "recommendations": [
+                {
+                  "text": "Implement role-based access control to protect sensitive data",
+                  "explanation": "Ensures only authorized users can view or edit patient information",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Use secure APIs and encryption for data at rest and in transit",
+                  "explanation": "Protects patient data from unauthorized access and meets regulatory requirements",
+                  "confidence": 0.8
+                },
+                {
+                  "text": "Provide a mobile-responsive interface or dedicated mobile app",
+                  "explanation": "Improves accessibility for patients and staff on the go",
+                  "confidence": 0.7
+                }
+              ],
+              "assumptions": [
+                "The system will be web-based",
+                "Users have reliable internet connectivity",
+                "The target market follows digital health regulations"
+              ]
+            },
+            "source": "openai"
+          }
+        ]
+      }
+    ],
+    "activeChatId": "chat_05d55784-24c4-4683-bed3-a006c3251e34"
   }
 ]

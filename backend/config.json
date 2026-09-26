@@ -1,10 +1,10 @@
 {
-  "appName": "Clinic & Pani Puri Hub",
-  "businessName": "Health & Food Solutions",
+  "appName": "Paani Puri Express",
+  "businessName": "Paani Puri Express",
   "entityName": "Order",
   "entityNamePlural": "Orders",
-  "projectId": "p_muf27adsjit4de",
+  "projectId": "p_muecghjui7mb05",
   "port": 3847,
-  "version": "1.1.8",
-  "generatedAt": "2026-09-24T05:00:02.538Z"
+  "version": "1.1.10",
+  "generatedAt": "2026-09-25T18:25:14.354Z"
 }
